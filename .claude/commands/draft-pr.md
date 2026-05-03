@@ -1,14 +1,14 @@
 ---
 name: draft-pr
-description: Draft a pull request — title, body, and recommended labels — based on the commits and diff between the current branch and the default branch. Use when the user asks to "open a PR", "draft a PR", "make the PR", or runs /draft-pr. Produces a draft for review; does not submit.
+description: Draft a pull request — title, body, and recommended labels — based on the commits and diff between the current branch and the default branch. Use when the user asks to "open a PR", "draft a PR", "make the PR", or runs /draft-pr. Produces a draft for review, then asks for confirmation before submitting.
 kind: command
 invocation: /draft-pr
-version: 2
+version: 3
 ---
 
 # Draft Pull Request
 
-You are drafting a PR for the current branch. The output is a title, a body, a label list, and a ready-to-run `gh pr create` command. The user reviews, edits, and submits — you do not submit.
+You are drafting a PR for the current branch. The output is a title, a body, and a label list. After presenting the draft, ask the user for confirmation. If they confirm, run `gh pr create` yourself. If they want changes first, update the draft accordingly and ask again.
 
 ## Step 1 — Survey the branch
 
@@ -103,9 +103,9 @@ Recommend from the project's standard set (see `.github/sync-labels.sh`). Three 
 
 **Breaking changes** — if any commit has `!` or a `BREAKING CHANGE:` footer, add `breaking-change` and call it out in the body's *Notes* section.
 
-## Step 5 — Output
+## Step 5 — Output and confirmation
 
-Show the draft in this shape so the user can copy and run the command:
+Show the draft in this shape:
 
 ````
 **Title:**
@@ -117,8 +117,14 @@ Show the draft in this shape so the user can copy and run the command:
 ```
 
 **Labels:** `type:chore`, `priority:medium`
+````
 
-**Command:**
+Then ask: **"Should I create this PR?"**
+
+- If the user confirms (yes / looks good / go ahead / etc.) — run `gh pr create` using the heredoc form below, then report the PR URL.
+- If the user requests changes — update the draft and ask again.
+- If the user says no — stop.
+
 ```bash
 gh pr create \
   --title "<title>" \
@@ -128,12 +134,11 @@ EOF
 )" \
   --label "type:chore" --label "priority:medium"
 ```
-````
 
 Use the heredoc form for the body — it handles newlines and special characters safely.
 
 ## Rules
 
-- **Do not run `gh pr create` yourself.** The user reviews and submits.
+- **Wait for explicit confirmation before running `gh pr create`.**
 - If `gh` is not authenticated, tell the user to run `gh auth login` first.
-- If the branch has no remote tracking branch, note that they'll need `git push -u origin <branch>` before the command will work.
+- If the branch has no remote tracking branch, note that they'll need `git push -u origin <branch>` before submitting.
