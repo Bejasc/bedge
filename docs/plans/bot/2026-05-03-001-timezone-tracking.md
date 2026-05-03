@@ -102,16 +102,16 @@ export const taskManager = new TaskManager();
 
 ## Phase 3 — `/time track` and `/time untrack` Commands
 
-- [ ] Create `apps/bot/src/commands/time/track.ts` — admin-only (`ManageGuild`), subcommand of a `time` command group
-- [ ] Implement timezone parsing helper `apps/bot/src/lib/timezone.ts`
+- [x] Create `apps/bot/src/commands/time/track.ts` — admin-only (`ManageGuild`), subcommand of a `time` command group
+- [x] Implement timezone parsing helper `apps/bot/src/lib/timezone.ts`
   - Accept raw input string; attempt parse via `spacetime` (IANA, offset, abbreviation)
   - Return `{ ianaZone: string, displayName: string, currentOffset: string } | null`
-- [ ] On `/time track @member <zone> <categoryId> <alias>`:
+- [x] On `/time track @member <zone> <categoryId> <alias>`:
   1. Parse and resolve timezone; if null, reply with parse error
   2. Post ephemeral confirmation embed showing: member, resolved timezone name, current offset, alias, category — with a ✅ Confirm and ❌ Cancel button
   3. On confirm: create a locked voice channel in the category (no `Connect` permission for `@everyone`); name it `<alias> approx time: --:--`; save `TimeTrackConfig` to MongoDB with the new `channelId`
   4. Trigger an immediate channel-name update so the time shows correctly without waiting for the cron tick
-- [ ] Create `apps/bot/src/commands/time/untrack.ts` — admin-only
+- [x] Create `apps/bot/src/commands/time/untrack.ts` — admin-only
   - Look up `TimeTrackConfig` for the member in this guild
   - If found: delete the voice channel (if it still exists); remove the config document; reply confirming removal
   - If not found: reply with "no tracking config found for that member"
