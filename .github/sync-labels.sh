@@ -35,33 +35,23 @@ GH_ARGS=()
 # Standard label set.
 # Format: name|color (no #)|description
 LABELS=(
-  # Type — exactly one per PR. Mirrors Conventional Commits types.
-  "type:feat|a2eeef|New feature visible to users or API consumers"
-  "type:fix|d73a4a|Bug fix"
-  "type:docs|0075ca|Documentation only"
-  "type:style|c5def5|Formatting, whitespace; no behaviour change"
-  "type:refactor|cf7ab9|Code change that neither fixes a bug nor adds a feature"
-  "type:perf|fbca04|Performance improvement"
-  "type:test|d4c5f9|Adding or correcting tests"
-  "type:build|8b6f47|Build system, bundler, dependency bumps"
-  "type:ci|a8a8a8|CI configuration"
-  "type:chore|e7e7e7|Routine task that doesn't fit other types"
+  # Priority
+  "p1|B60205|Priority 1 - Address before anything else"
+  "p2|FBCA04|Priority 2 - High value"
+  "p3|0052CC|Priority 3 - Nice to have"
 
-  # Status — zero or one. Most PRs don't need one.
-  "status:wip|fbca04|Work in progress; not ready for review"
-  "status:blocked|b60205|Blocked on something the description names"
-  "status:needs-review|0075ca|Ready for review"
-  "status:ready|0e8a16|Approved and ready to merge"
+  # Status
+  "status:blocked|E99695|Waiting on something before work can continue"
+  "status:in-progress|FEF2C0|Actively being worked on"
+  "status:needs-review|BFDADC|Ready for the other person to look at"
+  "status:ready|1D76DB|Scoped and good to pick up"
 
-  # Priority — zero or one. Apply when materially relevant.
-  "priority:high|b60205|High priority"
-  "priority:medium|d93f0b|Medium priority"
-  "priority:low|bfdadc|Low priority"
-
-  # Special.
-  "breaking-change|d93f0b|Introduces a breaking change to a published API or contract"
-  "good-first-issue|7057ff|Approachable issue for new contributors"
-  "help-wanted|008672|Extra attention or external contribution welcome"
+  # Type
+  "type:bug|d73a4a|Something is broken or behaving incorrectly"
+  "type:chore|C5DEF5|Maintenance, refactor, or tooling - no new behaviour"
+  "type:design|FBCA04|UI, UX, or game design decisions"
+  "type:docs|5319E7|Documentation, plans, GDD, or inline comments"
+  "type:feature|0075ca|New functionality or player-facing behaviour"
 )
 
 # Build a lookup of standard names for the purge step.
