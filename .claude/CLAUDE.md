@@ -149,7 +149,7 @@ All commits follow [Conventional Commits 1.0.0](https://www.conventionalcommits.
 
 ### Pull requests
 
-The `bejasc/draft-pr` skill produces title, body, and label recommendations from the branch's commits. Activate it when ready to open a PR. The skill drafts; the user submits.
+Run `/draft-pr` when ready to open a PR. It reads the branch's commits, picks the dominant Conventional Commits type, maps it to a `type:*` label, drafts a title and body, and asks for confirmation before running `gh pr create`. The user confirms; the command submits.
 
 ## Planning
 

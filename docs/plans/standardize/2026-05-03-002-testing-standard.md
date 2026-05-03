@@ -117,9 +117,9 @@ If any commit carries a `!` suffix or a `BREAKING CHANGE:` footer, the `breaking
 7. Show the draft — title, body, and proposed labels — and ask the user to confirm or adjust before running `gh pr create`.
 8. On confirmation: run `gh pr create --title "…" --body "…" --label "type:xxx"` (plus `--label "breaking-change"` if applicable).
 
-- [ ] Create `.claude/commands/draft-pr.md` implementing the behaviour above
-- [ ] Update `CLAUDE.md`: replace the `bejasc/draft-pr` skill reference with `/draft-pr` and a one-line description of what it does
-- [ ] Verify the command renders correctly by running `/draft-pr` on the plan-002 branch and confirming it selects `type:chore` or `type:test` (whichever is dominant)
+- [x] Create `.claude/commands/draft-pr.md` implementing the behaviour above
+- [x] Update `CLAUDE.md`: replace the `bejasc/draft-pr` skill reference with `/draft-pr` and a one-line description of what it does
+- [x] Verify the command renders correctly by running `/draft-pr` on the plan-002 branch and confirming it selects `type:chore` or `type:test` (whichever is dominant)
 
 **Exit criteria:** `/draft-pr` produces a draft with a correctly-selected label; the `CLAUDE.md` reference is no longer a dead link.
 
