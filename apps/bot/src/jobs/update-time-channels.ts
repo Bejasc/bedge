@@ -29,7 +29,7 @@ function isInWindow(currentMinutes: number, window: AvailabilityWindow): boolean
   return currentMinutes >= start && currentMinutes < end;
 }
 
-function computeStoplight(
+export function computeStoplight(
   currentMinutes: number,
   currentDay: number,
   weekdays: Map<string, AvailabilityWindow[] | null> | Record<string, AvailabilityWindow[] | null>,
