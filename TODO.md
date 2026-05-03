@@ -24,6 +24,12 @@
 - Per-integration routing config (which webhook fires to which Discord channel)
 - Integration configs stored in MongoDB via `@bedge/database`
 
+### Testing
+- Set up test runner (vitest or jest) in `apps/bot` — requires test infra, tsconfig update, and script wiring
+- Unit tests for `lib/timezone.ts` (parseTimezone — IANA, abbreviation, offset, invalid input)
+- Unit tests for `lib/time-channel.ts` (roundTo15, formatHHmm, buildChannelName)
+- Unit tests for stoplight logic in `jobs/update-time-channels.ts` (isInWindow, computeStoplight — overnight, weekday override, fallback)
+
 ### apps/bot — Discord Bot
 - `/post-embed` — accept JSON payload, delete invoking message, post embed in its place
 - `/config` — per-guild channel and feature toggle management
