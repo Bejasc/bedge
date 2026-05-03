@@ -78,10 +78,10 @@ None — all resolved.
 
 ## Phase 2 — Task Scheduler
 
-- [ ] Install `node-cron` in `apps/bot`
-- [ ] Create `apps/bot/src/lib/task-manager.ts` — a `TaskManager` singleton with `register(name, cronExpression, fn)` and `deregister(name)` methods; logs job start/stop via `BotLogger`
-- [ ] Instantiate and export `taskManager` from `apps/bot/src/index.ts` after DB connect, before client login
-- [ ] Register the channel-update job (`*/15 * * * *`) during startup, passing it the Sapphire client reference so it can access the Discord API
+- [x] Install `node-cron` in `apps/bot`
+- [x] Create `apps/bot/src/lib/task-manager.ts` — a `TaskManager` singleton with `register(name, cronExpression, fn)` and `deregister(name)` methods; logs job start/stop via `BotLogger`
+- [x] Instantiate and export `taskManager` from `apps/bot/src/index.ts` after DB connect, before client login
+- [x] Register the channel-update job (`*/15 * * * *`) during startup, passing it the Sapphire client reference so it can access the Discord API
 
 Sketch:
 ```ts
