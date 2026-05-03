@@ -1,8 +1,8 @@
 import { Command } from '@sapphire/framework';
-import { buildTrackSubcommand, handleTrack } from './track.js';
-import { buildUntrackSubcommand, handleUntrack } from './untrack.js';
-import { buildAvailabilitySubcommand, handleAvailability } from './availability.js';
-import { buildInfoSubcommand, handleInfo } from './info.js';
+import { buildTrackSubcommand, handleTrack } from '../../functions/time-tracking/track.js';
+import { buildUntrackSubcommand, handleUntrack } from '../../functions/time-tracking/untrack.js';
+import { buildAvailabilitySubcommand, handleAvailability } from '../../functions/time-tracking/availability.js';
+import { buildInfoSubcommand, handleInfo } from '../../functions/time-tracking/info.js';
 
 export class TimeCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
