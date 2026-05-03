@@ -1,0 +1,5 @@
+services:
+  mongo:
+    volumes: []
+    tmpfs:
+      - /data/db
