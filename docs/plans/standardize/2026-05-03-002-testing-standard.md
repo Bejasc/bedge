@@ -53,8 +53,8 @@ None — scope is well-defined from Captured items and existing project shape.
 
 Update `CLAUDE.md` with the full testing convention so any contributor (or Claude) knows exactly where tests live, how to name them, and how to run them.
 
-- [ ] Replace the `## Testing` stub in `CLAUDE.md` with the full standard: test location (`apps/<app>/tests/`), one file per domain, naming (`<domain>.test.ts`), what belongs in unit tests vs what requires integration infrastructure
-- [ ] Add test commands to the `## Commands` section: `pnpm test`, `pnpm test:coverage`, per-package equivalents
+- [x] Replace the `## Testing` stub in `CLAUDE.md` with the full standard: test location (`apps/<app>/tests/`), one file per domain, naming (`<domain>.test.ts`), what belongs in unit tests vs what requires integration infrastructure
+- [x] Add test commands to the `## Commands` section: `pnpm test`, `pnpm test:coverage`, per-package equivalents
 
 **Exit criteria:** A reader of `CLAUDE.md` can answer "where do I put a test?", "what do I name it?", and "how do I run it?" without asking.
 

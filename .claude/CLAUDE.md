@@ -49,6 +49,8 @@ data/
 pnpm dev                         # watch-mode dev run for bot (tsx)
 pnpm build                       # tsc build across all packages (-r)
 pnpm start                       # run compiled bot
+pnpm test                        # run all workspace tests
+pnpm test:coverage               # run all workspace tests with coverage
 pnpm generate:schema             # generate JSON schemas from Zod types → data/schemas/
 docker compose up                # build and run bot container
 pnpm --filter @bedge/types ...   # run a command scoped to the types package
@@ -68,7 +70,28 @@ pnpm --filter api ...            # run a command scoped to the api
 
 ## Testing
 
-No tests yet. Bot unit tests go in `apps/bot/src/__tests__/`; API tests go in `apps/api/src/__tests__/`. Unit-test command logic and service logic only; integration tests require real MongoDB and Discord sandbox.
+**Runner:** Vitest (native ESM, NodeNext-compatible — no Babel required).
+
+**Test location:** `apps/<app>/tests/` alongside `src/`. Tests live outside the TypeScript compilation output so no `tsconfig.json` exclude dance is needed.
+
+**Naming:** one file per domain or feature — `<domain>.test.ts`. Keep related cases together; don't fragment a domain across multiple files.
+
+**What belongs in unit tests:** pure functions, command logic, service logic — anything that can run without external infrastructure.
+
+**What requires integration infrastructure:** MongoDB connections, Discord gateway, HTTP layers. Do not mock these in unit tests — write integration tests separately when the infrastructure is available.
+
+**Available commands:**
+
+```bash
+pnpm test                             # run all workspace tests
+pnpm test:coverage                    # run all workspace tests with coverage
+pnpm --filter bot test                # run bot tests only
+pnpm --filter bot test:watch          # run bot tests in watch mode
+pnpm --filter bot test:coverage       # run bot tests with coverage report
+pnpm --filter api test                # run api tests only
+pnpm --filter api test:watch          # run api tests in watch mode
+pnpm --filter api test:coverage       # run api tests with coverage report
+```
 
 ## Scope vocabulary
 
