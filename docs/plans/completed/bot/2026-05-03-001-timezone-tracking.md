@@ -1,7 +1,7 @@
 ---
 plan: 001
 title: Timezone Tracking
-status: active
+status: complete
 date: 2026-05-03
 updated: 2026-05-03
 domain: bot
@@ -186,20 +186,20 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Acceptance Criteria
 
-- [ ] `/time track @member <zone> <categoryId> <alias>` creates a locked voice channel; config persists in MongoDB
-- [ ] Timezone input accepts UTC offsets, abbreviations, and IANA strings; resolved IANA zone is shown in the confirm step before saving
-- [ ] Voice channel name updates every 15 minutes without manual intervention
-- [ ] If the tracked voice channel is deleted, the next cron tick recreates it
-- [ ] `/time untrack @member` removes the config and deletes the channel
-- [ ] `/time availability` allows members to set broad and weekday-specific windows
-- [ ] Weekday overrides take precedence over the broad layer
-- [ ] Overnight windows (end < start) are correctly interpreted as crossing midnight
-- [ ] Channel name includes the stoplight dot when availability is configured
-- [ ] `/time info @member` returns an embed with time, date, timezone, availability status, and matching embed color
-- [ ] All commands require appropriate permissions (`ManageGuild` for track/untrack; self or admin for availability)
-- [ ] `TaskManager` is reusable — registering a new job requires only a name, cron expression, and function
-- [ ] `pnpm build` passes with no type errors
-- [ ] Changes committed to git following Conventional Commits
+- [x] `/time track @member <zone> <categoryId> <alias>` creates a locked voice channel; config persists in MongoDB
+- [x] Timezone input accepts UTC offsets, abbreviations, and IANA strings; resolved IANA zone is shown in the confirm step before saving
+- [x] Voice channel name updates every 15 minutes without manual intervention
+- [x] If the tracked voice channel is deleted, the next cron tick recreates it
+- [x] `/time untrack @member` removes the config and deletes the channel
+- [x] `/time availability` allows members to set broad and weekday-specific windows
+- [x] Weekday overrides take precedence over the broad layer
+- [x] Overnight windows (end < start) are correctly interpreted as crossing midnight
+- [x] Channel name includes the stoplight dot when availability is configured
+- [x] `/time info @member` returns an embed with time, date, timezone, availability status, and matching embed color
+- [x] All commands require appropriate permissions (`ManageGuild` for track/untrack; self or admin for availability)
+- [x] `TaskManager` is reusable — registering a new job requires only a name, cron expression, and function
+- [x] `pnpm build` passes with no type errors
+- [x] Changes committed to git following Conventional Commits
 
 ---
 

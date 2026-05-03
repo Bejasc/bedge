@@ -2,8 +2,6 @@
 
 ## Active
 
-- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler.
-
 ## Upcoming
 
 
@@ -40,4 +38,5 @@
 
 ## Completed
 
+- [Plan 001 — Timezone Tracking](docs/plans/completed/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler
 - Wire `@bejasc/logger` into `apps/bot` — wrote `ILogger` adapter in `src/lib/logger.ts`, converted bot to ESM (`"type": "module"`, `NodeNext` module resolution), added workspace dep
