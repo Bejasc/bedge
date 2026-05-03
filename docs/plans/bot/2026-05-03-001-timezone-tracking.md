@@ -122,14 +122,14 @@ export const taskManager = new TaskManager();
 
 ## Phase 4 — Channel Update Job
 
-- [ ] Implement `apps/bot/src/jobs/update-time-channels.ts`
+- [x] Implement `apps/bot/src/jobs/update-time-channels.ts`
   - Query all `TimeTrackConfig` documents from MongoDB
   - For each config, compute current time in member's timezone (via `spacetime` or `Intl`), round to nearest 15m, format as `HH:mm` (24h)
   - Query `AvailabilityConfig` for the member; if found, compute the stoplight dot (🔴🟠🟡🟢) based on current local time vs availability windows — see stoplight logic below
   - Attempt to fetch the voice channel by `channelId`; if missing, create it in `categoryId` with the locked permission
   - Set channel name to `<alias> approx time: <HH:mm>` (no dot if no availability config), or `<alias> approx time: <HH:mm> 🟢` (with dot if configured)
   - Discord rate-limits channel renames to 2 per 10 min per channel — the 15-min tick stays well within this; log a warning if a rename fails
-- [ ] Wire the job into `TaskManager` during startup
+- [x] Wire the job into `TaskManager` during startup
 
 **Stoplight logic:**
 Walk the weekday layer first (if a weekday array exists for the current day), then fall back to the broad layer. Find the first `AvailabilityWindow` the current local time falls in; use its `level`. If no window matches in either layer, default to 🔴. For overnight windows (`end < start`), treat end as next-calendar-day before comparison.
