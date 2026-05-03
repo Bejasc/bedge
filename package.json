@@ -7,6 +7,8 @@
     "dev": "pnpm --filter bot dev",
     "postdev": "docker compose down -v",
     "build": "pnpm -r build",
+    "test": "pnpm -r --filter \"./apps/**\" test",
+    "test:coverage": "pnpm -r --filter \"./apps/**\" test:coverage",
     "start": "pnpm --filter bot start",
     "generate:schema": "pnpm --filter @bedge/types generate:schema"
   },

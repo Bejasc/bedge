@@ -62,10 +62,10 @@ Update `CLAUDE.md` with the full testing convention so any contributor (or Claud
 
 ## Phase 2 — Wire Vitest: `apps/bot`
 
-- [ ] Add `vitest` and `@vitest/coverage-v8` to `apps/bot` devDependencies
-- [ ] Create `apps/bot/vitest.config.ts` (node environment, glob `tests/**/*.test.ts`, globals true)
-- [ ] Update `apps/bot/tsconfig.json` to include `tests/**/*` so TypeScript sees test files
-- [ ] Add `"test"`, `"test:watch"`, and `"test:coverage"` scripts to `apps/bot/package.json`
+- [x] Add `vitest` and `@vitest/coverage-v8` to `apps/bot` devDependencies
+- [x] Create `apps/bot/vitest.config.ts` (node environment, glob `tests/**/*.test.ts`, globals true)
+- [x] Update `apps/bot/tsconfig.json` to include `tests/**/*` so TypeScript sees test files
+- [x] Add `"test"`, `"test:watch"`, and `"test:coverage"` scripts to `apps/bot/package.json`
 
 **Exit criteria:** `pnpm --filter bot test` resolves and exits 0.
 
@@ -73,10 +73,10 @@ Update `CLAUDE.md` with the full testing convention so any contributor (or Claud
 
 ## Phase 3 — Wire Vitest: `apps/api`
 
-- [ ] Add `vitest` and `@vitest/coverage-v8` to `apps/api` devDependencies
-- [ ] Create `apps/api/vitest.config.ts`
-- [ ] Update `apps/api/tsconfig.json` to include `tests/**/*`
-- [ ] Add `"test"`, `"test:watch"`, and `"test:coverage"` scripts to `apps/api/package.json`
+- [x] Add `vitest` and `@vitest/coverage-v8` to `apps/api` devDependencies
+- [x] Create `apps/api/vitest.config.ts`
+- [x] Update `apps/api/tsconfig.json` to include `tests/**/*`
+- [x] Add `"test"`, `"test:watch"`, and `"test:coverage"` scripts to `apps/api/package.json`
 
 **Exit criteria:** `pnpm --filter api test` resolves and exits 0.
 
@@ -86,9 +86,9 @@ Update `CLAUDE.md` with the full testing convention so any contributor (or Claud
 
 Wire the root so a single command fans out across all workspaces, and prove the runner resolves with one trivial test per app. These tests assert nothing about application logic — they exist only to confirm Vitest starts, finds files, and exits 0.
 
-- [ ] Add `"test"` and `"test:coverage"` scripts to root `package.json` using `pnpm -r test` / `pnpm -r test:coverage`
-- [ ] Create `apps/bot/tests/runner.test.ts` with a single trivial assertion (e.g. `expect(true).toBe(true)`)
-- [ ] Create `apps/api/tests/runner.test.ts` with the same
+- [x] Add `"test"` and `"test:coverage"` scripts to root `package.json` using `pnpm -r test` / `pnpm -r test:coverage`
+- [x] Create `apps/bot/tests/runner.test.ts` with a single trivial assertion (e.g. `expect(true).toBe(true)`)
+- [x] Create `apps/api/tests/runner.test.ts` with the same
 
 **Exit criteria:** `pnpm test` from the repo root runs all workspace tests and exits 0.
 
