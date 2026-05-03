@@ -2,9 +2,10 @@
 
 ## Active
 
+- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler.
+
 ## Upcoming
 
-- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler. Depends on nothing.
 
 ## Captured
 

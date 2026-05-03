@@ -1,7 +1,7 @@
 ---
 plan: 001
 title: Timezone Tracking
-status: draft
+status: active
 date: 2026-05-03
 updated: 2026-05-03
 domain: bot
