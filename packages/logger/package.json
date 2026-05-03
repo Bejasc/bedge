@@ -1,0 +1,60 @@
+{
+  "name": "@bejasc/logger",
+  "version": "1.0.0",
+  "description": "Comprehensive logging utility with console, file, and Discord webhook support",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "node": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "browser": {
+        "types": "./dist/browser/browser.d.ts",
+        "default": "./dist/browser/browser.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "logger",
+    "logging",
+    "discord",
+    "typescript",
+    "webhook",
+    "console",
+    "file-logging"
+  ],
+  "scripts": {
+    "build": "npm run build:node && npm run build:browser",
+    "build:node": "tsc",
+    "build:browser": "tsc -p tsconfig.browser.json",
+    "dev": "tsc --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.27",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "discord.js": "^14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "discord.js": {
+      "optional": true
+    }
+  }
+}

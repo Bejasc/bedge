@@ -1,0 +1,15 @@
+{
+  "name": "bedge-bot",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter bot dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter bot start",
+    "generate:schema": "pnpm --filter @bedge/types generate:schema"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}
