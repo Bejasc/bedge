@@ -2,7 +2,6 @@
   "name": "@bejasc/logger",
   "version": "1.0.0",
   "description": "Comprehensive logging utility with console, file, and Discord webhook support",
-  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

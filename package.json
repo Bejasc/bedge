@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predev": "docker compose up mongo -d --wait",
     "dev": "pnpm --filter bot dev",
+    "postdev": "docker compose down -v",
     "build": "pnpm -r build",
     "start": "pnpm --filter bot start",
     "generate:schema": "pnpm --filter @bedge/types generate:schema"
