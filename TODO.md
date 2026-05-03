@@ -2,8 +2,6 @@
 
 ## Active
 
-- [Plan 002 — Testing Standard & PR Workflow](docs/plans/standardize/2026-05-03-002-testing-standard.md) — wire Vitest across apps/bot and apps/api, document the testing convention, add pnpm test scripts, create /draft-pr command with label selection.
-
 ## Upcoming
 
 - [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler. Depends on Plan 002 (testing phase).
@@ -42,4 +40,5 @@
 
 ## Completed
 
+- [Plan 002 — Testing Standard & PR Workflow](docs/plans/completed/standardize/2026-05-03-002-testing-standard.md) — wired Vitest across apps/bot and apps/api, documented testing convention in CLAUDE.md, added pnpm test scripts, created /draft-pr command with label selection.
 - Wire `@bejasc/logger` into `apps/bot` — wrote `ILogger` adapter in `src/lib/logger.ts`, converted bot to ESM (`"type": "module"`, `NodeNext` module resolution), added workspace dep
