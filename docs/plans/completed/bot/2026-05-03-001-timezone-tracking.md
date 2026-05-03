@@ -5,7 +5,7 @@ status: complete
 date: 2026-05-03
 updated: 2026-05-03
 domain: bot
-depends: []
+depends: [002]
 ---
 
 # Plan 001 — Timezone Tracking
@@ -174,6 +174,31 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ---
 
+## Phase 7 — Tests
+
+Unit tests for the pure logic introduced by this plan. Requires Plan 002 (testing infrastructure) to be complete before this phase runs.
+
+- [ ] Create `apps/bot/tests/timezone.test.ts`
+  - `parseTimezone` with a valid IANA string (e.g. `Australia/Sydney`) → returns resolved zone and offset
+  - `parseTimezone` with a UTC offset string (e.g. `UTC+9:30`) → resolves to IANA equivalent
+  - `parseTimezone` with a common abbreviation (e.g. `CST`) → resolves to an IANA zone
+  - `parseTimezone` with an invalid string → returns `null`
+- [ ] Create `apps/bot/tests/time-channel.test.ts`
+  - `roundTo15` — rounds down to the nearest 15-minute boundary across a range of inputs (0, 7, 14, 15, 16, 29, 30, 59)
+  - `formatHHmm` — formats hours and minutes as zero-padded 24h string
+  - `buildChannelName` — assembles the channel name string with and without a stoplight dot
+- [ ] Create `apps/bot/tests/stoplight.test.ts`
+  - `computeStoplight` — time falls inside a green window → returns `green`
+  - `computeStoplight` — time falls inside an overnight window (end < start) correctly resolved → returns expected level
+  - `computeStoplight` — weekday override takes precedence over broad layer
+  - `computeStoplight` — no matching window in either layer → returns `red` (default fallback)
+  - `computeStoplight` — no availability config at all → returns `red`
+- [ ] Run `pnpm --filter bot test` and confirm all pass
+
+**Exit criteria:** All tests pass; `pnpm --filter bot test` exits 0 with no skipped cases.
+
+---
+
 ## Out of Scope
 
 - Per-server configurable update interval (defaulting to 15 minutes globally)
@@ -199,7 +224,8 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 - [x] All commands require appropriate permissions (`ManageGuild` for track/untrack; self or admin for availability)
 - [x] `TaskManager` is reusable — registering a new job requires only a name, cron expression, and function
 - [x] `pnpm build` passes with no type errors
-- [x] Changes committed to git following Conventional Commits
+- [ ] `pnpm --filter bot test` passes with all Phase 7 test cases green
+- [ ] Changes committed to git following Conventional Commits
 
 ---
 
