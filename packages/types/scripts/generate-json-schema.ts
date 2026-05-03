@@ -1,15 +1,21 @@
 import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { z } from 'zod';
+import { TimeTrackConfigSchema } from '../src/schemas/time-track-config.js';
+import { AvailabilityConfigSchema } from '../src/schemas/availability-config.js';
 
-// Import schemas here as they are defined in src/index.ts, e.g.:
-// import { GuildConfigSchema } from '../src/schemas/guild-config.schema';
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const targets: Array<{ schema: z.ZodTypeAny; path: string }> = [
-  // {
-  //   schema: GuildConfigSchema,
-  //   path: resolve(__dirname, '../../../data/schemas/guild-config.schema.json'),
-  // },
+  {
+    schema: TimeTrackConfigSchema,
+    path: resolve(__dirname, '../../../data/schemas/time-track-config.schema.json'),
+  },
+  {
+    schema: AvailabilityConfigSchema,
+    path: resolve(__dirname, '../../../data/schemas/availability-config.schema.json'),
+  },
 ];
 
 for (const { schema, path } of targets) {

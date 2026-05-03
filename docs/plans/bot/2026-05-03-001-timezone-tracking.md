@@ -58,19 +58,19 @@ None — all resolved.
 
 ## Phase 1 — Foundation: Schemas, Models, and Workspace Wiring
 
-- [ ] Add `@bedge/types` and `@bedge/database` as workspace dependencies in `apps/bot/package.json`
-- [ ] Remove the duplicate `apps/bot/src/lib/database.ts` and import `connectDatabase` / `disconnectDatabase` from `@bedge/database` in `apps/bot/src/index.ts`
-- [ ] Define `TimeTrackConfigSchema` Zod schema in `packages/types/src/schemas/time-track-config.ts`
+- [x] Add `@bedge/types` and `@bedge/database` as workspace dependencies in `apps/bot/package.json`
+- [x] Remove the duplicate `apps/bot/src/lib/database.ts` and import `connectDatabase` / `disconnectDatabase` from `@bedge/database` in `apps/bot/src/index.ts`
+- [x] Define `TimeTrackConfigSchema` Zod schema in `packages/types/src/schemas/time-track-config.ts`
   - Fields: `guildId`, `memberId`, `timezone` (IANA string), `categoryId`, `channelId` (populated after creation), `alias`, `createdAt`
-- [ ] Define `AvailabilityConfigSchema` Zod schema in `packages/types/src/schemas/availability-config.ts`
+- [x] Define `AvailabilityConfigSchema` Zod schema in `packages/types/src/schemas/availability-config.ts`
   - `AvailabilityLevel` enum: `green | yellow | orange | red`
   - `AvailabilityWindow`: `{ start: HH:mm, end: HH:mm, level: AvailabilityLevel }`
   - Fields: `guildId`, `memberId`, `broad` (`AvailabilityWindow[]`), `weekdays` (map of 0–6 to `AvailabilityWindow[] | null`)
   - Multiple windows per layer are allowed so users can express e.g. green 9–18, yellow 18–21, orange 21–23; current time matched against the first window it falls in; no match = 🔴
-- [ ] Add Mongoose model for `TimeTrackConfig` in `packages/database/src/models/time-track-config.ts`
-- [ ] Add Mongoose model for `AvailabilityConfig` in `packages/database/src/models/availability-config.ts`
-- [ ] Export both models from `packages/database/src/index.ts`
-- [ ] Run `pnpm generate:schema` and commit generated `.schema.json` files
+- [x] Add Mongoose model for `TimeTrackConfig` in `packages/database/src/models/time-track-config.ts`
+- [x] Add Mongoose model for `AvailabilityConfig` in `packages/database/src/models/availability-config.ts`
+- [x] Export both models from `packages/database/src/index.ts`
+- [x] Run `pnpm generate:schema` and commit generated `.schema.json` files
 
 **Exit criteria:** `pnpm build` passes across all packages; bot imports DB helpers from `@bedge/database`; no duplicate database code in `apps/bot/src/lib/`
 

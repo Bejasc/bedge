@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { container } from '@sapphire/framework';
 import { config } from './config.js';
 import { client } from './client.js';
-import { connectDatabase } from './lib/database.js';
+import { connectDatabase } from '@bedge/database';
 
 async function main(): Promise<void> {
   try {

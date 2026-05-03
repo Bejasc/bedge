@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "guildId": {
+      "type": "string"
+    },
+    "memberId": {
+      "type": "string"
+    },
+    "broad": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "end": {
+            "type": "string",
+            "pattern": "^\\d{2}:\\d{2}$"
+          },
+          "level": {
+            "type": "string",
+            "enum": [
+              "green",
+              "yellow",
+              "orange",
+              "red"
+            ]
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "level"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "weekdays": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[0-6]$"
+      },
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "string",
+                  "pattern": "^\\d{2}:\\d{2}$"
+                },
+                "end": {
+                  "type": "string",
+                  "pattern": "^\\d{2}:\\d{2}$"
+                },
+                "level": {
+                  "type": "string",
+                  "enum": [
+                    "green",
+                    "yellow",
+                    "orange",
+                    "red"
+                  ]
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "level"
+              ],
+              "additionalProperties": false
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "guildId",
+    "memberId",
+    "broad",
+    "weekdays"
+  ],
+  "additionalProperties": false
+}
