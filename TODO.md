@@ -2,9 +2,11 @@
 
 ## Active
 
+- [Plan 002 — Testing Standard & PR Workflow](docs/plans/standardize/2026-05-03-002-testing-standard.md) — wire Vitest across apps/bot and apps/api, document the testing convention, add pnpm test scripts, create /draft-pr command with label selection.
+
 ## Upcoming
 
-- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler. Depends on nothing.
+- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler. Depends on Plan 002 (testing phase).
 
 ## Captured
 
@@ -24,11 +26,6 @@
 - Per-integration routing config (which webhook fires to which Discord channel)
 - Integration configs stored in MongoDB via `@bedge/database`
 
-### Testing
-- Set up test runner (vitest or jest) in `apps/bot` — requires test infra, tsconfig update, and script wiring
-- Unit tests for `lib/timezone.ts` (parseTimezone — IANA, abbreviation, offset, invalid input)
-- Unit tests for `lib/time-channel.ts` (roundTo15, formatHHmm, buildChannelName)
-- Unit tests for stoplight logic in `jobs/update-time-channels.ts` (isInWindow, computeStoplight — overnight, weekday override, fallback)
 
 ### apps/bot — Discord Bot
 - `/post-embed` — accept JSON payload, delete invoking message, post embed in its place
