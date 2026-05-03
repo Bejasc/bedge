@@ -4,6 +4,7 @@
 
 ## Upcoming
 
+- [Plan 001 — Timezone Tracking](docs/plans/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler. Depends on Plan 002 (testing phase).
 
 ## Captured
 
@@ -22,6 +23,7 @@
 - Atlassian integration — Jira issue events, Confluence page updates
 - Per-integration routing config (which webhook fires to which Discord channel)
 - Integration configs stored in MongoDB via `@bedge/database`
+
 
 ### apps/bot — Discord Bot
 - `/post-embed` — accept JSON payload, delete invoking message, post embed in its place
