@@ -140,17 +140,17 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Phase 5 — `/time availability`
 
-- [ ] Create `apps/bot/src/commands/time/availability.ts`
-- [ ] Subcommands:
+- [x] Create `apps/bot/src/commands/time/availability.ts`
+- [x] Subcommands:
   - `/time availability add-broad <start> <end> <level> [member]` — append a window to the broad layer; level is a choice: `green | yellow | orange | red`; member defaults to self; admins can specify another member
   - `/time availability add-weekday <day> <start> <end> <level> [member]` — append a window to a weekday override
   - `/time availability clear-broad [member]` — remove all broad windows
   - `/time availability clear-weekday <day> [member]` — remove all windows for a given weekday
   - `/time availability clear [member]` — remove the entire availability config
   - `/time availability view [member]` — show current config as an embed, listing all windows per layer with their levels
-- [ ] Input: time strings in `HH:mm` format (24h); validate and store
-- [ ] For overnight windows (`end < start`): treat end as next-calendar-day — confirm this to the user in the interaction response so intent is clear
-- [ ] Confirmation button before saving, showing a summary of the window being added
+- [x] Input: time strings in `HH:mm` format (24h); validate and store
+- [x] For overnight windows (`end < start`): treat end as next-calendar-day — confirm this to the user in the interaction response so intent is clear
+- [x] Confirmation button before saving, showing a summary of the window being added
 
 **Exit criteria:** A member can set their own availability; an admin can set it for another member; weekday overrides override the broad layer at runtime
 
