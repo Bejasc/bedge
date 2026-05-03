@@ -2,6 +2,7 @@ import { Command } from '@sapphire/framework';
 import { buildTrackSubcommand, handleTrack } from './track.js';
 import { buildUntrackSubcommand, handleUntrack } from './untrack.js';
 import { buildAvailabilitySubcommand, handleAvailability } from './availability.js';
+import { buildInfoSubcommand, handleInfo } from './info.js';
 
 export class TimeCommand extends Command {
   public constructor(context: Command.LoaderContext, options: Command.Options) {
@@ -15,7 +16,8 @@ export class TimeCommand extends Command {
         .setDescription('Timezone tracking commands')
         .addSubcommand(buildTrackSubcommand)
         .addSubcommand(buildUntrackSubcommand)
-        .addSubcommand(buildAvailabilitySubcommand),
+        .addSubcommand(buildAvailabilitySubcommand)
+        .addSubcommand(buildInfoSubcommand),
     );
   }
 
@@ -28,6 +30,8 @@ export class TimeCommand extends Command {
         return handleUntrack(interaction);
       case 'availability':
         return handleAvailability(interaction);
+      case 'info':
+        return handleInfo(interaction);
       default:
         await interaction.reply({ content: `Unknown subcommand: ${sub}`, ephemeral: true });
     }

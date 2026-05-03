@@ -158,17 +158,17 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Phase 6 — `/time info`
 
-- [ ] Create `apps/bot/src/commands/time/info.ts`
-- [ ] Query `TimeTrackConfig` and `AvailabilityConfig` for the target member in this guild
-- [ ] Build an embed containing:
+- [x] Create `apps/bot/src/commands/time/info.ts`
+- [x] Query `TimeTrackConfig` and `AvailabilityConfig` for the target member in this guild
+- [x] Build an embed containing:
   - Member display name + avatar thumbnail
   - Current local time (live, not rounded) and date in their timezone
   - Timezone name and UTC offset
   - Availability status: stoplight emoji + label — derived from the same window-match logic as the channel dot
     - 🟢 Definitely available / 🟡 Maybe available / 🟠 Probably unavailable / 🔴 Unavailable
   - If the command invoker is also tracked: a second row showing their current time, for manual comparison
-- [ ] Embed color matches the stoplight level: green / yellow / orange / red
-- [ ] If the target member has no tracking config, reply with an ephemeral error (tracked members only)
+- [x] Embed color matches the stoplight level: green / yellow / orange / red
+- [x] If the target member has no tracking config, reply with an ephemeral error (tracked members only)
 
 **Exit criteria:** `/time info @member` returns a correctly-styled embed; stoplight and embed color match the channel dot; works whether or not the invoker is tracked
 
