@@ -1,108 +1,86 @@
-# Project Scaffold
+# bedge
 
-**Status:** Active
-**Applies to:** New projects bootstrapping a Claude-Code-driven workflow
-**Last updated:** 2026-04-26
+**bedge** is a personal integration platform. It pulls together the tools and services used day-to-day — GitHub, Todoist, Atlassian, Discord — and gives them a place to communicate with each other on your terms.
 
----
+Two surfaces are active. A Discord bot manages server utilities: join/leave logs, moderation events, embeds, per-server configuration. A webhook relay API receives events from external services and emits human-readable updates to Discord — the kind you'd share in a team channel, not a stack trace. Both surfaces share a MongoDB persistence layer and a common library of schemas and models inside the same repo.
 
-## What this is
-
-A drop-in starting point for new projects. Copy this directory's contents into a fresh repo and you have:
-
-- The plan-driven workflow (`/plan`, `/work`, `/status`) wired up.
-- Conventional Commits and PR drafting skills available to Claude.
-- A standard GitHub label set with a sync script.
-- Baseline VS Code and Claude permission settings.
-- A `CLAUDE.md` template with a clearly-marked project-specific section.
+The project is early. The bot is scaffolded and live. The API is stubbed. Integration work hasn't started yet.
 
 ---
 
-## Layout
+## Architecture
+
+TypeScript pnpm monorepo.
 
 ```
-.claude/
-├── README.md                          # the plan/work/status workflow standard
-├── commands/                          # slash commands
-│   ├── plan.md
-│   ├── work.md
-│   └── status.md
-├── skills/
-│   └── bejasc/                        # personal cross-project skills
-│       ├── conventional-commits/      # commit message format
-│       ├── draft-pr/                  # PR title, body, label suggestions
-│       ├── doc-formatting/
-│       ├── doc-coauthoring/
-│       └── plan-doc/
-└── settings.json                      # baseline permissions
-
-.github/
-└── sync-labels.sh                     # one-shot script to apply standard labels
-
-.vscode/
-└── settings.json                      # baseline editor settings
-
-CLAUDE.md                              # workspace instructions template
+apps/
+  bot/        Discord bot — Sapphire.js + discord.js 14
+  api/        Webhook relay — NestJS (scaffold only)
+packages/
+  types/      Zod v4 schemas and inferred types   (@bedge/types)
+  database/   Mongoose models and connection       (@bedge/database)
+  logger/     Console, file, and Discord webhook   (@bejasc/logger)
 ```
+
+`apps/bot` is **ESM** (`"type": "module"`, NodeNext module resolution). `apps/api` and all packages are **CommonJS**. Every package extends `tsconfig.base.json` at the root.
 
 ---
 
-## Scaffolding a new project
+## Getting started
 
-From the new project's repo root:
+**Requires:** Node 20+, pnpm 9+, Docker (for the local MongoDB container).
 
 ```bash
-# Adjust the source path to wherever this scaffold lives.
-SCAFFOLD=~/git/infra/standards/scaffold
-
-cp -R "$SCAFFOLD/.claude"  ./
-cp -R "$SCAFFOLD/.github"  ./
-cp -R "$SCAFFOLD/.vscode"  ./
-cp    "$SCAFFOLD/CLAUDE.md" ./
-
-mkdir -p docs/plans
+cp .env.example apps/bot/.env   # fill in DISCORD_TOKEN, DISCORD_APPLICATION_ID, MONGODB_URI
+pnpm install
+pnpm dev
 ```
 
-Then:
+`pnpm dev` spins up a local MongoDB container via Docker before starting the bot in watch mode, and tears it down on exit. In production, replace `MONGODB_URI` with an Atlas connection string.
 
-1. Open `CLAUDE.md` and fill in the **Project-Specific Configuration** section. Leave the **Standards** section alone.
-2. Push to GitHub, then run `./.github/sync-labels.sh` to apply the standard label set. Add `--purge` to remove the GitHub default labels (`bug`, `enhancement`, etc.) at the same time.
-3. Make `TODO.md` from the template in the workflow doc (`.claude/README.md`) — four sections: Active Plan, Upcoming Plans, Captured Ideas, Completed Plans.
-4. Run `/plan new` to author your first plan.
+> [!IMPORTANT]
+> Enable **GuildMembers** and **MessageContent** privileged intents in the Discord Developer Portal before the bot will connect. Without them the client will be refused at login.
 
 ---
 
-## Symlinking instead of copying
+## Commands
 
-If a project lives alongside the scaffold and you want changes to propagate (rather than diverge), symlink the parts that should stay in sync:
+| Command | What it does |
+| --- | --- |
+| `pnpm dev` | Local MongoDB + bot in watch mode |
+| `pnpm build` | Compile all packages (tsc, recursive) |
+| `pnpm start` | Run the compiled bot |
+| `pnpm generate:schema` | Generate JSON Schema files from Zod types |
+| `docker compose up` | Run the full stack in Docker |
+| `pnpm --filter bot ...` | Scope a command to the bot only |
+| `pnpm --filter api ...` | Scope a command to the API only |
+
+---
+
+## Logging
+
+The logger lives at `packages/logger` as `@bejasc/logger` — a structured logger with console, file, and Discord webhook targets. The bot wires it in via a Sapphire `ILogger` adapter.
+
+Configuration is driven entirely by environment variables. Copy `.env.example` to see the full set. Defaults: console at `INFO`, file output to `./logs/bedge-bot.log`, Discord webhook disabled.
+
+---
+
+## Schema generation
+
+Zod schemas live in `packages/types/src/schemas/`. After adding or changing a schema, run:
 
 ```bash
-# In the project repo:
-ln -s ../standards/scaffold/.claude/commands .claude/commands
-ln -s ../standards/scaffold/.claude/skills   .claude/skills
+pnpm generate:schema
 ```
 
-Symlink only the parts that are workspace-standard. `CLAUDE.md`, `.claude/settings.json`, and the `.github/` and `.vscode/` directories often have project-specific deltas, so copy those.
-
-The infra repo itself uses this pattern — `.claude/commands` and `.claude/skills` are symlinks back to this scaffold.
+This writes `.schema.json` files to `data/schemas/` and those files are referenced in `.vscode/settings.json` so VS Code provides IntelliSense on any JSON data files that match. Commit the generated output alongside the schema change.
 
 ---
 
-## What lives where
+## Roadmap
 
-| Concern              | Location                                 | Why                                                      |
-| -------------------- | ---------------------------------------- | -------------------------------------------------------- |
-| Plan/work/status     | `.claude/commands/`                      | Slash commands the harness loads.                        |
-| Workflow standard    | `.claude/README.md`                      | The plan lifecycle, file layout, frontmatter spec.       |
-| Personal skills      | `.claude/skills/bejasc/`                 | Cross-project skills — commits, PRs, doc authoring.      |
-| GitHub labels        | `.github/sync-labels.sh`                 | Idempotent sync of the standard label set.               |
-| VS Code defaults     | `.vscode/settings.json`                  | Editor-level defaults that don't depend on the project.  |
-| Project instructions | `CLAUDE.md`                              | Workspace baseline + project-specific overrides up top.  |
+Near-term work is tracked in [TODO.md](TODO.md). The broad shape:
 
----
-
-## Updating the scaffold
-
-When something improves — a better commit pattern, a label tweak, a workflow refinement — change it here. Projects symlinked into this scaffold pick up the change immediately. Projects that copied get the change next time they re-scaffold.
-
-For non-trivial structural changes, consider a brief migration note in this README so older projects can catch up without re-deriving the change.
+- **Bot** — join/leave and moderation logs, per-guild channel config, `/post-embed`, warn system
+- **API** — GitHub PR and push announcements, Todoist task events, Atlassian issue updates
+- **Platform** — shared guild config schema, `@bedge/database` model library, multi-surface routing config stored in MongoDB
