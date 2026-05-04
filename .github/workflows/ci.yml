@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   ci:
@@ -29,9 +29,14 @@ jobs:
       - name: Build
         run: pnpm -r build
 
-      - name: Notify failure
-        if: failure() && github.ref == 'refs/heads/main'
+      - name: Test
+        run: pnpm test
+
+      - name: Notify Discord on failure
+        if: failure() && github.ref == 'refs/heads/master'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOYS }}
         run: |
-          curl -s -X POST "${{ secrets.DISCORD_WEBHOOK_CI }}" \
+          curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"content\": \"CI failed on \`${{ github.ref_name }}\` — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+            -d "{\"embeds\":[{\"title\":\"❌ bedge-bot CI failed\",\"description\":\"\`${{ github.ref_name }}\` @ \`${GITHUB_SHA:0:7}\` — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"color\":15158332}]}"
