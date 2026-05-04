@@ -1,11 +1,11 @@
 ---
 plan: 001
 title: Timezone Tracking
-status: draft
+status: complete
 date: 2026-05-03
 updated: 2026-05-03
 domain: bot
-depends: []
+depends: [002]
 ---
 
 # Plan 001 — Timezone Tracking
@@ -58,19 +58,19 @@ None — all resolved.
 
 ## Phase 1 — Foundation: Schemas, Models, and Workspace Wiring
 
-- [ ] Add `@bedge/types` and `@bedge/database` as workspace dependencies in `apps/bot/package.json`
-- [ ] Remove the duplicate `apps/bot/src/lib/database.ts` and import `connectDatabase` / `disconnectDatabase` from `@bedge/database` in `apps/bot/src/index.ts`
-- [ ] Define `TimeTrackConfigSchema` Zod schema in `packages/types/src/schemas/time-track-config.ts`
+- [x] Add `@bedge/types` and `@bedge/database` as workspace dependencies in `apps/bot/package.json`
+- [x] Remove the duplicate `apps/bot/src/lib/database.ts` and import `connectDatabase` / `disconnectDatabase` from `@bedge/database` in `apps/bot/src/index.ts`
+- [x] Define `TimeTrackConfigSchema` Zod schema in `packages/types/src/schemas/time-track-config.ts`
   - Fields: `guildId`, `memberId`, `timezone` (IANA string), `categoryId`, `channelId` (populated after creation), `alias`, `createdAt`
-- [ ] Define `AvailabilityConfigSchema` Zod schema in `packages/types/src/schemas/availability-config.ts`
+- [x] Define `AvailabilityConfigSchema` Zod schema in `packages/types/src/schemas/availability-config.ts`
   - `AvailabilityLevel` enum: `green | yellow | orange | red`
   - `AvailabilityWindow`: `{ start: HH:mm, end: HH:mm, level: AvailabilityLevel }`
   - Fields: `guildId`, `memberId`, `broad` (`AvailabilityWindow[]`), `weekdays` (map of 0–6 to `AvailabilityWindow[] | null`)
   - Multiple windows per layer are allowed so users can express e.g. green 9–18, yellow 18–21, orange 21–23; current time matched against the first window it falls in; no match = 🔴
-- [ ] Add Mongoose model for `TimeTrackConfig` in `packages/database/src/models/time-track-config.ts`
-- [ ] Add Mongoose model for `AvailabilityConfig` in `packages/database/src/models/availability-config.ts`
-- [ ] Export both models from `packages/database/src/index.ts`
-- [ ] Run `pnpm generate:schema` and commit generated `.schema.json` files
+- [x] Add Mongoose model for `TimeTrackConfig` in `packages/database/src/models/time-track-config.ts`
+- [x] Add Mongoose model for `AvailabilityConfig` in `packages/database/src/models/availability-config.ts`
+- [x] Export both models from `packages/database/src/index.ts`
+- [x] Run `pnpm generate:schema` and commit generated `.schema.json` files
 
 **Exit criteria:** `pnpm build` passes across all packages; bot imports DB helpers from `@bedge/database`; no duplicate database code in `apps/bot/src/lib/`
 
@@ -78,10 +78,10 @@ None — all resolved.
 
 ## Phase 2 — Task Scheduler
 
-- [ ] Install `node-cron` in `apps/bot`
-- [ ] Create `apps/bot/src/lib/task-manager.ts` — a `TaskManager` singleton with `register(name, cronExpression, fn)` and `deregister(name)` methods; logs job start/stop via `BotLogger`
-- [ ] Instantiate and export `taskManager` from `apps/bot/src/index.ts` after DB connect, before client login
-- [ ] Register the channel-update job (`*/15 * * * *`) during startup, passing it the Sapphire client reference so it can access the Discord API
+- [x] Install `node-cron` in `apps/bot`
+- [x] Create `apps/bot/src/lib/task-manager.ts` — a `TaskManager` singleton with `register(name, cronExpression, fn)` and `deregister(name)` methods; logs job start/stop via `BotLogger`
+- [x] Instantiate and export `taskManager` from `apps/bot/src/index.ts` after DB connect, before client login
+- [x] Register the channel-update job (`*/15 * * * *`) during startup, passing it the Sapphire client reference so it can access the Discord API
 
 Sketch:
 ```ts
@@ -102,16 +102,16 @@ export const taskManager = new TaskManager();
 
 ## Phase 3 — `/time track` and `/time untrack` Commands
 
-- [ ] Create `apps/bot/src/commands/time/track.ts` — admin-only (`ManageGuild`), subcommand of a `time` command group
-- [ ] Implement timezone parsing helper `apps/bot/src/lib/timezone.ts`
+- [x] Create `apps/bot/src/commands/time/track.ts` — admin-only (`ManageGuild`), subcommand of a `time` command group
+- [x] Implement timezone parsing helper `apps/bot/src/lib/timezone.ts`
   - Accept raw input string; attempt parse via `spacetime` (IANA, offset, abbreviation)
   - Return `{ ianaZone: string, displayName: string, currentOffset: string } | null`
-- [ ] On `/time track @member <zone> <categoryId> <alias>`:
+- [x] On `/time track @member <zone> <categoryId> <alias>`:
   1. Parse and resolve timezone; if null, reply with parse error
   2. Post ephemeral confirmation embed showing: member, resolved timezone name, current offset, alias, category — with a ✅ Confirm and ❌ Cancel button
   3. On confirm: create a locked voice channel in the category (no `Connect` permission for `@everyone`); name it `<alias> approx time: --:--`; save `TimeTrackConfig` to MongoDB with the new `channelId`
   4. Trigger an immediate channel-name update so the time shows correctly without waiting for the cron tick
-- [ ] Create `apps/bot/src/commands/time/untrack.ts` — admin-only
+- [x] Create `apps/bot/src/commands/time/untrack.ts` — admin-only
   - Look up `TimeTrackConfig` for the member in this guild
   - If found: delete the voice channel (if it still exists); remove the config document; reply confirming removal
   - If not found: reply with "no tracking config found for that member"
@@ -122,14 +122,14 @@ export const taskManager = new TaskManager();
 
 ## Phase 4 — Channel Update Job
 
-- [ ] Implement `apps/bot/src/jobs/update-time-channels.ts`
+- [x] Implement `apps/bot/src/jobs/update-time-channels.ts`
   - Query all `TimeTrackConfig` documents from MongoDB
   - For each config, compute current time in member's timezone (via `spacetime` or `Intl`), round to nearest 15m, format as `HH:mm` (24h)
   - Query `AvailabilityConfig` for the member; if found, compute the stoplight dot (🔴🟠🟡🟢) based on current local time vs availability windows — see stoplight logic below
   - Attempt to fetch the voice channel by `channelId`; if missing, create it in `categoryId` with the locked permission
   - Set channel name to `<alias> approx time: <HH:mm>` (no dot if no availability config), or `<alias> approx time: <HH:mm> 🟢` (with dot if configured)
   - Discord rate-limits channel renames to 2 per 10 min per channel — the 15-min tick stays well within this; log a warning if a rename fails
-- [ ] Wire the job into `TaskManager` during startup
+- [x] Wire the job into `TaskManager` during startup
 
 **Stoplight logic:**
 Walk the weekday layer first (if a weekday array exists for the current day), then fall back to the broad layer. Find the first `AvailabilityWindow` the current local time falls in; use its `level`. If no window matches in either layer, default to 🔴. For overnight windows (`end < start`), treat end as next-calendar-day before comparison.
@@ -140,17 +140,17 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Phase 5 — `/time availability`
 
-- [ ] Create `apps/bot/src/commands/time/availability.ts`
-- [ ] Subcommands:
+- [x] Create `apps/bot/src/commands/time/availability.ts`
+- [x] Subcommands:
   - `/time availability add-broad <start> <end> <level> [member]` — append a window to the broad layer; level is a choice: `green | yellow | orange | red`; member defaults to self; admins can specify another member
   - `/time availability add-weekday <day> <start> <end> <level> [member]` — append a window to a weekday override
   - `/time availability clear-broad [member]` — remove all broad windows
   - `/time availability clear-weekday <day> [member]` — remove all windows for a given weekday
   - `/time availability clear [member]` — remove the entire availability config
   - `/time availability view [member]` — show current config as an embed, listing all windows per layer with their levels
-- [ ] Input: time strings in `HH:mm` format (24h); validate and store
-- [ ] For overnight windows (`end < start`): treat end as next-calendar-day — confirm this to the user in the interaction response so intent is clear
-- [ ] Confirmation button before saving, showing a summary of the window being added
+- [x] Input: time strings in `HH:mm` format (24h); validate and store
+- [x] For overnight windows (`end < start`): treat end as next-calendar-day — confirm this to the user in the interaction response so intent is clear
+- [x] Confirmation button before saving, showing a summary of the window being added
 
 **Exit criteria:** A member can set their own availability; an admin can set it for another member; weekday overrides override the broad layer at runtime
 
@@ -158,19 +158,44 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Phase 6 — `/time info`
 
-- [ ] Create `apps/bot/src/commands/time/info.ts`
-- [ ] Query `TimeTrackConfig` and `AvailabilityConfig` for the target member in this guild
-- [ ] Build an embed containing:
+- [x] Create `apps/bot/src/commands/time/info.ts`
+- [x] Query `TimeTrackConfig` and `AvailabilityConfig` for the target member in this guild
+- [x] Build an embed containing:
   - Member display name + avatar thumbnail
   - Current local time (live, not rounded) and date in their timezone
   - Timezone name and UTC offset
   - Availability status: stoplight emoji + label — derived from the same window-match logic as the channel dot
     - 🟢 Definitely available / 🟡 Maybe available / 🟠 Probably unavailable / 🔴 Unavailable
   - If the command invoker is also tracked: a second row showing their current time, for manual comparison
-- [ ] Embed color matches the stoplight level: green / yellow / orange / red
-- [ ] If the target member has no tracking config, reply with an ephemeral error (tracked members only)
+- [x] Embed color matches the stoplight level: green / yellow / orange / red
+- [x] If the target member has no tracking config, reply with an ephemeral error (tracked members only)
 
 **Exit criteria:** `/time info @member` returns a correctly-styled embed; stoplight and embed color match the channel dot; works whether or not the invoker is tracked
+
+---
+
+## Phase 7 — Tests
+
+Unit tests for the pure logic introduced by this plan. Requires Plan 002 (testing infrastructure) to be complete before this phase runs.
+
+- [x] Create `apps/bot/tests/timezone.test.ts`
+  - `parseTimezone` with a valid IANA string (e.g. `Australia/Sydney`) → returns resolved zone and offset
+  - `parseTimezone` with a UTC offset string (e.g. `UTC+9:30`) → resolves to IANA equivalent
+  - `parseTimezone` with a common abbreviation (e.g. `CST`) → resolves to an IANA zone
+  - `parseTimezone` with an invalid string → returns `null`
+- [x] Create `apps/bot/tests/time-channel.test.ts`
+  - `roundTo15` — rounds down to the nearest 15-minute boundary across a range of inputs (0, 7, 14, 15, 16, 29, 30, 59)
+  - `formatHHmm` — formats hours and minutes as zero-padded 24h string
+  - `buildChannelName` — assembles the channel name string with and without a stoplight dot
+- [x] Create `apps/bot/tests/stoplight.test.ts`
+  - `computeStoplight` — time falls inside a green window → returns `green`
+  - `computeStoplight` — time falls inside an overnight window (end < start) correctly resolved → returns expected level
+  - `computeStoplight` — weekday override takes precedence over broad layer
+  - `computeStoplight` — no matching window in either layer → returns `red` (default fallback)
+  - `computeStoplight` — no availability config at all → returns `red`
+- [x] Run `pnpm --filter bot test` and confirm all pass
+
+**Exit criteria:** All tests pass; `pnpm --filter bot test` exits 0 with no skipped cases.
 
 ---
 
@@ -186,20 +211,21 @@ Walk the weekday layer first (if a weekday array exists for the current day), th
 
 ## Acceptance Criteria
 
-- [ ] `/time track @member <zone> <categoryId> <alias>` creates a locked voice channel; config persists in MongoDB
-- [ ] Timezone input accepts UTC offsets, abbreviations, and IANA strings; resolved IANA zone is shown in the confirm step before saving
-- [ ] Voice channel name updates every 15 minutes without manual intervention
-- [ ] If the tracked voice channel is deleted, the next cron tick recreates it
-- [ ] `/time untrack @member` removes the config and deletes the channel
-- [ ] `/time availability` allows members to set broad and weekday-specific windows
-- [ ] Weekday overrides take precedence over the broad layer
-- [ ] Overnight windows (end < start) are correctly interpreted as crossing midnight
-- [ ] Channel name includes the stoplight dot when availability is configured
-- [ ] `/time info @member` returns an embed with time, date, timezone, availability status, and matching embed color
-- [ ] All commands require appropriate permissions (`ManageGuild` for track/untrack; self or admin for availability)
-- [ ] `TaskManager` is reusable — registering a new job requires only a name, cron expression, and function
-- [ ] `pnpm build` passes with no type errors
-- [ ] Changes committed to git following Conventional Commits
+- [x] `/time track @member <zone> <categoryId> <alias>` creates a locked voice channel; config persists in MongoDB
+- [x] Timezone input accepts UTC offsets, abbreviations, and IANA strings; resolved IANA zone is shown in the confirm step before saving
+- [x] Voice channel name updates every 15 minutes without manual intervention
+- [x] If the tracked voice channel is deleted, the next cron tick recreates it
+- [x] `/time untrack @member` removes the config and deletes the channel
+- [x] `/time availability` allows members to set broad and weekday-specific windows
+- [x] Weekday overrides take precedence over the broad layer
+- [x] Overnight windows (end < start) are correctly interpreted as crossing midnight
+- [x] Channel name includes the stoplight dot when availability is configured
+- [x] `/time info @member` returns an embed with time, date, timezone, availability status, and matching embed color
+- [x] All commands require appropriate permissions (`ManageGuild` for track/untrack; self or admin for availability)
+- [x] `TaskManager` is reusable — registering a new job requires only a name, cron expression, and function
+- [x] `pnpm build` passes with no type errors
+- [x] `pnpm --filter bot test` passes with all Phase 7 test cases green
+- [x] Changes committed to git following Conventional Commits
 
 ---
 
