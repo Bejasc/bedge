@@ -1,5 +1,3 @@
-export { connectDatabase, disconnectDatabase } from './connection';
-
-// Mongoose models will be exported here as they are defined.
-// Example:
-//   export { GuildConfigModel } from './models/guild-config.model';
+export { connectDatabase, disconnectDatabase } from './connection.js';
+export { TimeTrackConfigModel } from './models/time-track-config.js';
+export { AvailabilityConfigModel } from './models/availability-config.js';

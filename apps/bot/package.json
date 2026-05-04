@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "FORCE_COLOR=3 tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "test": "vitest run",
@@ -12,15 +12,20 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@bedge/database": "workspace:*",
+    "@bedge/types": "workspace:*",
     "@bejasc/logger": "workspace:*",
     "@sapphire/framework": "^5.2.2",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
-    "mongoose": "^8.5.2"
+    "mongoose": "^8.5.2",
+    "node-cron": "^4.2.1",
+    "spacetime": "^7.12.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@vitest/coverage-v8": "^2.0.0",
+    "@types/node-cron": "^3.0.11",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
     "vitest": "^2.0.0"
