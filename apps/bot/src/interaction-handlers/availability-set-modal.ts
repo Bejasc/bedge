@@ -9,7 +9,7 @@ export class AvailabilitySetModalHandler extends InteractionHandler {
   }
 
   public override parse(interaction: ModalSubmitInteraction) {
-    if (!interaction.customId.startsWith('availability-set:')) return this.none();
+    if (!interaction.customId.startsWith('availability-advanced:')) return this.none();
     return this.some();
   }
 

@@ -1,5 +1,7 @@
 import {
   ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ModalBuilder,
   PermissionFlagsBits,
   TextInputBuilder,
@@ -9,9 +11,58 @@ import type { Command } from '@sapphire/framework';
 import { container } from '@sapphire/framework';
 import type { SapphireClient } from '@sapphire/framework';
 import { AvailabilityConfigModel } from '@bedge/database';
-import type { AvailabilityLevel } from '@bedge/types';
-import { LEVEL_LABELS, parseDuration } from '../../lib/availability.js';
+import type { AvailabilityConfigDocument } from '@bedge/database';
+import type { AvailabilityLevel, AvailabilityWindow } from '@bedge/types';
+import { LEVEL_LABELS, parseDuration, timeToMinutes } from '../../lib/availability.js';
 import { updateMemberTimeChannel } from '../../jobs/update-time-channels.js';
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const HHMM = /^\d{2}:\d{2}$/;
+
+// Two windows overlap if they share any minute. Touching boundaries (end == other start) is not an overlap.
+function windowsOverlap(a: AvailabilityWindow, b: AvailabilityWindow): boolean {
+  const aS = timeToMinutes(a.start);
+  const aE = timeToMinutes(a.end);
+  const bS = timeToMinutes(b.start);
+  const bE = timeToMinutes(b.end);
+  const aOvernight = aE < aS;
+  const bOvernight = bE < bS;
+
+  if (!aOvernight && !bOvernight) {
+    return aS < bE && bS < aE;
+  }
+  if (aOvernight && !bOvernight) {
+    // A covers [aS, 1440) ∪ [0, aE)
+    return aS < bE || bS < aE;
+  }
+  if (!aOvernight && bOvernight) {
+    // B covers [bS, 1440) ∪ [0, bE)
+    return bS < aE || aS < bE;
+  }
+  // Both overnight — both cross midnight, always share some time
+  return true;
+}
+
+function getExistingWindows(config: AvailabilityConfigDocument | null, day: string): AvailabilityWindow[] {
+  if (!config) return [];
+  if (day === 'broad') return [...(config.broad ?? [])];
+  const map = config.weekdays instanceof Map ? config.weekdays : new Map(Object.entries(config.weekdays ?? {}));
+  return [...(map.get(day) ?? [])];
+}
+
+async function saveWindows(
+  guildId: string,
+  memberId: string,
+  day: string,
+  windows: AvailabilityWindow[],
+): Promise<void> {
+  const field = day === 'broad' ? 'broad' : `weekdays.${day}`;
+  await AvailabilityConfigModel.findOneAndUpdate(
+    { guildId, memberId },
+    { $set: { [field]: windows } },
+    { upsert: true },
+  );
+}
 
 async function resolveTarget(
   interaction: Command.ChatInputCommandInteraction,
@@ -87,6 +138,95 @@ export async function handleAvailabilitySet(interaction: Command.ChatInputComman
   const { targetUser, allowed } = await resolveTarget(interaction);
   if (!allowed) return;
 
+  const day = interaction.options.getString('day', true);
+  const start = interaction.options.getString('start', true);
+  const end = interaction.options.getString('end', true);
+  const status = interaction.options.getString('status', true) as AvailabilityLevel;
+
+  if (!HHMM.test(start) || !HHMM.test(end)) {
+    await interaction.reply({
+      content: '❌ Times must be in `HH:mm` format (24-hour), e.g. `09:00` or `21:30`.',
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const guildId = interaction.guildId!;
+  const memberId = targetUser.id;
+  const newWindow: AvailabilityWindow = { start, end, level: status };
+  const isOvernight = end < start;
+  const dayLabel = day === 'broad' ? 'every day' : DAY_NAMES[parseInt(day)];
+  const overnightNote = isOvernight ? '\n> ℹ️ End time is before start — this window wraps past midnight.' : '';
+
+  const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
+  const existing = getExistingWindows(config, day);
+  const overlapping = existing.filter((w) => windowsOverlap(newWindow, w));
+
+  container.logger.debug(
+    `availability set: member=${memberId} day=${day} ${start}–${end} ${status} — ${existing.length} existing, ${overlapping.length} overlapping`,
+  );
+
+  if (overlapping.length > 0) {
+    const overlapList = overlapping
+      .map((w) => `• \`${w.start}–${w.end}\` ${LEVEL_LABELS[w.level as AvailabilityLevel]}`)
+      .join('\n');
+
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder().setCustomId('av-confirm').setLabel('Replace').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('av-cancel').setLabel('Cancel').setStyle(ButtonStyle.Secondary),
+    );
+
+    const msg = await interaction.editReply({
+      content: `The new window **\`${start}–${end}\`** ${LEVEL_LABELS[status]} overlaps with the following on **${dayLabel}**:\n${overlapList}\n\nConfirm to replace the overlapping window(s) and add the new one.${overnightNote}`,
+      components: [row],
+    });
+
+    try {
+      const btn = await msg.awaitMessageComponent({
+        filter: (i) => i.user.id === interaction.user.id,
+        time: 30_000,
+      });
+
+      if (btn.customId === 'av-cancel') {
+        await btn.update({ content: 'Cancelled.', components: [] });
+        return;
+      }
+
+      const kept = existing.filter((w) => !windowsOverlap(newWindow, w));
+      await saveWindows(guildId, memberId, day, [...kept, newWindow]);
+
+      container.logger.debug(
+        `availability set: member=${memberId} day=${day} replaced ${overlapping.length} window(s) → ${start}–${end} ${status}`,
+      );
+
+      await btn.update({
+        content: `✅ **${dayLabel}** for <@${memberId}>: replaced ${overlapping.length} window(s) with **\`${start}–${end}\`** ${LEVEL_LABELS[status]}.${overnightNote}`,
+        components: [],
+      });
+    } catch {
+      await interaction.editReply({ content: '⏱️ Confirmation timed out.', components: [] });
+    }
+    return;
+  }
+
+  // No overlap — append directly
+  await saveWindows(guildId, memberId, day, [...existing, newWindow]);
+
+  container.logger.debug(
+    `availability set: member=${memberId} day=${day} appended ${start}–${end} ${status}`,
+  );
+
+  await interaction.editReply(
+    `✅ **${dayLabel}** for <@${memberId}>: added **\`${start}–${end}\`** ${LEVEL_LABELS[status]}.${overnightNote}`,
+  );
+}
+
+export async function handleAvailabilityAdvanced(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  const { targetUser, allowed } = await resolveTarget(interaction);
+  if (!allowed) return;
+
   const guildId = interaction.guildId!;
   const memberId = targetUser.id;
   const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
@@ -102,10 +242,10 @@ export async function handleAvailabilitySet(interaction: Command.ChatInputComman
       }
     : { broad: [], weekdays: {} };
 
-  container.logger.debug(`availability set: showing modal for member=${memberId} hasExistingConfig=${!!config}`);
+  container.logger.debug(`availability advanced: showing modal for member=${memberId} hasExistingConfig=${!!config}`);
 
   const modal = new ModalBuilder()
-    .setCustomId(`availability-set:${memberId}:${guildId}`)
+    .setCustomId(`availability-advanced:${memberId}:${guildId}`)
     .setTitle('Set Availability Config')
     .addComponents(
       new ActionRowBuilder<TextInputBuilder>().addComponents(
@@ -169,7 +309,6 @@ export async function handleAvailabilityOverride(interaction: Command.ChatInputC
     `availability override: member=${memberId} status=${status} durationMs=${durationMs} expires=${expiresAt.toISOString()}`,
   );
 
-  // Fire-and-forget immediate channel update — don't block the reply
   updateMemberTimeChannel(interaction.client as SapphireClient, guildId, memberId).catch((err: unknown) => {
     container.logger.warn(`availability override: immediate channel update failed for member=${memberId} — ${String(err)}`);
   });
