@@ -79,7 +79,9 @@ export async function updateMemberTimeChannel(
   }
 
   if (channel.name !== targetName) {
-    await channel.setName(targetName).catch((err: unknown) => {
+    // Fire-and-forget — don't hold the cron loop hostage if discord.js queues
+    // the rename behind a rate-limit bucket.
+    void channel.setName(targetName).catch((err: unknown) => {
       client.logger.warn(`update-member-channel: failed to rename channel ${channel!.id} — ${String(err)}`);
     });
   }

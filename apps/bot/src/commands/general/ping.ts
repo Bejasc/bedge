@@ -12,11 +12,27 @@ export class PingCommand extends Command {
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction): Promise<void> {
-    const before = Date.now();
-    await interaction.deferReply();
-    const roundTrip = Date.now() - before;
-    const heartbeat = Math.round(this.container.client.ws.ping);
+    // Interaction was created at this moment per Discord — anything before our
+    // first await is in-process scheduling latency.
+    const interactionCreatedAt = interaction.createdTimestamp;
+    const handlerStart = Date.now();
+    const scheduleLag = handlerStart - interactionCreatedAt;
 
-    await interaction.editReply(`Pong! Round trip: \`${roundTrip}ms\` | Heartbeat: \`${heartbeat}ms\``);
+    const beforeDefer = Date.now();
+    await interaction.deferReply();
+    const deferDuration = Date.now() - beforeDefer;
+
+    const heartbeat = Math.round(this.container.client.ws.ping);
+    const roundTrip = Date.now() - interactionCreatedAt;
+
+    if (scheduleLag > 500 || deferDuration > 500) {
+      this.container.logger.warn(
+        `ping: scheduleLag=${scheduleLag}ms deferDuration=${deferDuration}ms heartbeat=${heartbeat}ms`,
+      );
+    }
+
+    await interaction.editReply(
+      `Pong! Round trip: \`${roundTrip}ms\` (schedule: \`${scheduleLag}ms\`, defer: \`${deferDuration}ms\`) | Heartbeat: \`${heartbeat}ms\``,
+    );
   }
 }
