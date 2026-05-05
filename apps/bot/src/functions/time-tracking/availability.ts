@@ -7,9 +7,11 @@ import {
 } from 'discord.js';
 import type { Command } from '@sapphire/framework';
 import { container } from '@sapphire/framework';
+import type { SapphireClient } from '@sapphire/framework';
 import { AvailabilityConfigModel } from '@bedge/database';
 import type { AvailabilityLevel } from '@bedge/types';
 import { LEVEL_LABELS, parseDuration } from '../../lib/availability.js';
+import { updateMemberTimeChannel } from '../../jobs/update-time-channels.js';
 
 async function resolveTarget(
   interaction: Command.ChatInputCommandInteraction,
@@ -166,6 +168,11 @@ export async function handleAvailabilityOverride(interaction: Command.ChatInputC
   container.logger.debug(
     `availability override: member=${memberId} status=${status} durationMs=${durationMs} expires=${expiresAt.toISOString()}`,
   );
+
+  // Fire-and-forget immediate channel update — don't block the reply
+  updateMemberTimeChannel(interaction.client as SapphireClient, guildId, memberId).catch((err: unknown) => {
+    container.logger.warn(`availability override: immediate channel update failed for member=${memberId} — ${String(err)}`);
+  });
 
   await interaction.editReply(
     `✅ Availability for <@${memberId}> set to **${LEVEL_LABELS[status]}** until <t:${expiresUnix}:t> (<t:${expiresUnix}:R>).`,
