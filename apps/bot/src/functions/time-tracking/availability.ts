@@ -1,82 +1,19 @@
 import {
   ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
+  ModalBuilder,
   PermissionFlagsBits,
-  type SlashCommandSubcommandBuilder,
+  TextInputBuilder,
+  TextInputStyle,
 } from 'discord.js';
 import type { Command } from '@sapphire/framework';
+import { container } from '@sapphire/framework';
 import { AvailabilityConfigModel } from '@bedge/database';
-import type { AvailabilityLevel, AvailabilityWindow } from '@bedge/types';
+import type { AvailabilityLevel } from '@bedge/types';
+import { LEVEL_LABELS, parseDuration } from '../../lib/availability.js';
 
-const LEVEL_LABELS: Record<AvailabilityLevel, string> = {
-  green: '🟢 Definitely available',
-  yellow: '🟡 Maybe available',
-  orange: '🟠 Probably unavailable',
-  red: '🔴 Unavailable',
-};
-
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-function hhmm(value: string): boolean {
-  return /^\d{2}:\d{2}$/.test(value);
-}
-
-function windowSummary(w: AvailabilityWindow): string {
-  const overnight = w.end < w.start ? ' *(overnight)*' : '';
-  return `${w.start}–${w.end} ${LEVEL_LABELS[w.level]}${overnight}`;
-}
-
-export function buildAvailabilitySubcommand(sub: SlashCommandSubcommandBuilder): SlashCommandSubcommandBuilder {
-  return sub
-    .setName('availability')
-    .setDescription('Manage your availability windows')
-    .addStringOption((o) =>
-      o
-        .setName('action')
-        .setDescription('What to do')
-        .setRequired(true)
-        .addChoices(
-          { name: 'add-broad', value: 'add-broad' },
-          { name: 'add-weekday', value: 'add-weekday' },
-          { name: 'clear-broad', value: 'clear-broad' },
-          { name: 'clear-weekday', value: 'clear-weekday' },
-          { name: 'clear', value: 'clear' },
-          { name: 'view', value: 'view' },
-        ),
-    )
-    .addStringOption((o) =>
-      o.setName('start').setDescription('Start time in HH:mm (24h)'),
-    )
-    .addStringOption((o) =>
-      o.setName('end').setDescription('End time in HH:mm (24h)'),
-    )
-    .addStringOption((o) =>
-      o
-        .setName('level')
-        .setDescription('Availability level')
-        .addChoices(
-          { name: '🟢 green — Definitely available', value: 'green' },
-          { name: '🟡 yellow — Maybe available', value: 'yellow' },
-          { name: '🟠 orange — Probably unavailable', value: 'orange' },
-          { name: '🔴 red — Unavailable', value: 'red' },
-        ),
-    )
-    .addIntegerOption((o) =>
-      o
-        .setName('day')
-        .setDescription('Day of week (0=Sunday … 6=Saturday)')
-        .setMinValue(0)
-        .setMaxValue(6),
-    )
-    .addUserOption((o) =>
-      o.setName('member').setDescription('Member to configure (admins only; defaults to you)'),
-    );
-}
-
-export async function handleAvailability(interaction: Command.ChatInputCommandInteraction): Promise<void> {
-  const action = interaction.options.getString('action', true);
+async function resolveTarget(
+  interaction: Command.ChatInputCommandInteraction,
+): Promise<{ targetUser: { id: string; username: string }; allowed: boolean }> {
   const targetUser = interaction.options.getUser('member') ?? interaction.user;
   const isSelf = targetUser.id === interaction.user.id;
 
@@ -85,198 +22,152 @@ export async function handleAvailability(interaction: Command.ChatInputCommandIn
       content: '❌ You need the **Manage Server** permission to configure availability for other members.',
       ephemeral: true,
     });
+    return { targetUser, allowed: false };
+  }
+
+  return { targetUser, allowed: true };
+}
+
+export async function handleAvailabilityView(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  const { targetUser, allowed } = await resolveTarget(interaction);
+  if (!allowed) return;
+
+  await interaction.deferReply({ ephemeral: true });
+
+  const guildId = interaction.guildId!;
+  const memberId = targetUser.id;
+  const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
+
+  container.logger.debug(`availability view: member=${memberId} hasConfig=${!!config}`);
+
+  if (!config) {
+    await interaction.editReply({
+      content: [
+        `No custom availability configured for <@${memberId}>. **Default rules apply:**`,
+        '- `00:00–08:00` → 🔴 Unavailable',
+        '- `08:00–18:00` Mon–Fri → 🟠 Probably unavailable',
+        '- All other times → 🟡 Maybe available',
+        '',
+        'Use `/availability set` to configure custom windows.',
+      ].join('\n'),
+    });
     return;
   }
+
+  const jsonObj = {
+    broad: config.broad,
+    weekdays: Object.fromEntries(
+      config.weekdays instanceof Map
+        ? config.weekdays.entries()
+        : Object.entries(config.weekdays ?? {}),
+    ),
+  };
+
+  const jsonStr = JSON.stringify(jsonObj, null, 2);
+  let content = `**Availability config for <@${memberId}>** *(times are in their local timezone — days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat)*\n\`\`\`json\n${jsonStr}\n\`\`\``;
+
+  if (config.override) {
+    const now = new Date();
+    if (config.override.expiresAt > now) {
+      const unixTs = Math.floor(config.override.expiresAt.getTime() / 1000);
+      const label = LEVEL_LABELS[config.override.level as AvailabilityLevel];
+      content += `\n**Active override:** ${label} until <t:${unixTs}:t> (<t:${unixTs}:R>)`;
+      container.logger.debug(`availability view: member=${memberId} has active override level=${config.override.level} expires=${config.override.expiresAt.toISOString()}`);
+    } else {
+      container.logger.debug(`availability view: member=${memberId} override expired at ${config.override.expiresAt.toISOString()}`);
+    }
+  }
+
+  await interaction.editReply({ content });
+}
+
+export async function handleAvailabilitySet(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  const { targetUser, allowed } = await resolveTarget(interaction);
+  if (!allowed) return;
+
+  const guildId = interaction.guildId!;
+  const memberId = targetUser.id;
+  const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
+
+  const jsonObj = config
+    ? {
+        broad: config.broad,
+        weekdays: Object.fromEntries(
+          config.weekdays instanceof Map
+            ? config.weekdays.entries()
+            : Object.entries(config.weekdays ?? {}),
+        ),
+      }
+    : { broad: [], weekdays: {} };
+
+  container.logger.debug(`availability set: showing modal for member=${memberId} hasExistingConfig=${!!config}`);
+
+  const modal = new ModalBuilder()
+    .setCustomId(`availability-set:${memberId}:${guildId}`)
+    .setTitle('Set Availability Config')
+    .addComponents(
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        new TextInputBuilder()
+          .setCustomId('json')
+          .setLabel('JSON (times in local timezone, days 0=Sun…6=Sat)')
+          .setStyle(TextInputStyle.Paragraph)
+          .setValue(JSON.stringify(jsonObj, null, 2))
+          .setRequired(true),
+      ),
+    );
+
+  await interaction.showModal(modal);
+}
+
+export async function handleAvailabilityReset(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  const { targetUser, allowed } = await resolveTarget(interaction);
+  if (!allowed) return;
+
+  await interaction.deferReply({ ephemeral: true });
 
   const guildId = interaction.guildId!;
   const memberId = targetUser.id;
 
-  switch (action) {
-    case 'add-broad':
-      return addWindow(interaction, guildId, memberId, 'broad', null);
-    case 'add-weekday':
-      return addWindow(interaction, guildId, memberId, 'weekday', interaction.options.getInteger('day'));
-    case 'clear-broad':
-      return clearWindows(interaction, guildId, memberId, 'broad', null);
-    case 'clear-weekday':
-      return clearWindows(interaction, guildId, memberId, 'weekday', interaction.options.getInteger('day'));
-    case 'clear':
-      return clearAll(interaction, guildId, memberId, targetUser.id);
-    case 'view':
-      return viewConfig(interaction, guildId, memberId, targetUser);
-    default:
-      await interaction.reply({ content: `Unknown action: ${action}`, ephemeral: true });
-  }
+  await AvailabilityConfigModel.deleteOne({ guildId, memberId });
+
+  container.logger.debug(`availability reset: cleared config for member=${memberId} guild=${guildId}`);
+  await interaction.editReply(`✅ Availability config cleared for <@${memberId}>. Default rules now apply.`);
 }
 
-async function addWindow(
-  interaction: Command.ChatInputCommandInteraction,
-  guildId: string,
-  memberId: string,
-  layer: 'broad' | 'weekday',
-  day: number | null,
-): Promise<void> {
-  const start = interaction.options.getString('start');
-  const end = interaction.options.getString('end');
-  const level = interaction.options.getString('level') as AvailabilityLevel | null;
+export async function handleAvailabilityOverride(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  const { targetUser, allowed } = await resolveTarget(interaction);
+  if (!allowed) return;
 
-  if (!start || !end || !level) {
+  const status = interaction.options.getString('status', true) as AvailabilityLevel;
+  const durationStr = interaction.options.getString('duration', true);
+
+  const durationMs = parseDuration(durationStr);
+  if (durationMs === null) {
     await interaction.reply({
-      content: '❌ `start`, `end`, and `level` are required for this action.',
+      content: '❌ Invalid duration. Use formats like `3h`, `30m`, or `1h30m`.',
       ephemeral: true,
     });
     return;
   }
 
-  if (!hhmm(start) || !hhmm(end)) {
-    await interaction.reply({
-      content: '❌ Times must be in `HH:mm` format (24-hour), e.g. `09:00` or `21:30`.',
-      ephemeral: true,
-    });
-    return;
-  }
+  await interaction.deferReply({ ephemeral: true });
 
-  if (layer === 'weekday' && day === null) {
-    await interaction.reply({
-      content: '❌ `day` is required for `add-weekday` (0 = Sunday, 6 = Saturday).',
-      ephemeral: true,
-    });
-    return;
-  }
+  const guildId = interaction.guildId!;
+  const memberId = targetUser.id;
+  const expiresAt = new Date(Date.now() + durationMs);
+  const expiresUnix = Math.floor(expiresAt.getTime() / 1000);
 
-  const window: AvailabilityWindow = { start, end, level };
-  const isOvernight = end < start;
-
-  const confirmText =
-    layer === 'broad'
-      ? `Add broad window: **${windowSummary(window)}**`
-      : `Add ${DAY_NAMES[day!]} window: **${windowSummary(window)}**`;
-
-  const overnightNote = isOvernight
-    ? `\n> ℹ️ End time is earlier than start — this window extends past midnight into the next calendar day.`
-    : '';
-
-  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId('av-confirm').setLabel('Confirm').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('av-cancel').setLabel('Cancel').setStyle(ButtonStyle.Danger),
+  await AvailabilityConfigModel.findOneAndUpdate(
+    { guildId, memberId },
+    { $set: { override: { level: status, expiresAt } } },
+    { upsert: true },
   );
 
-  await interaction.deferReply({ ephemeral: true });
-  const msg = await interaction.editReply({
-    content: confirmText + overnightNote,
-    components: [row],
-  });
+  container.logger.debug(
+    `availability override: member=${memberId} status=${status} durationMs=${durationMs} expires=${expiresAt.toISOString()}`,
+  );
 
-  try {
-    const btn = await msg.awaitMessageComponent({
-      filter: (i) => i.user.id === interaction.user.id,
-      time: 30_000,
-    });
-
-    if (btn.customId === 'av-cancel') {
-      await btn.update({ content: 'Cancelled.', components: [] });
-      return;
-    }
-
-    if (layer === 'broad') {
-      await AvailabilityConfigModel.findOneAndUpdate(
-        { guildId, memberId },
-        { $push: { broad: window } },
-        { upsert: true },
-      );
-    } else {
-      await AvailabilityConfigModel.findOneAndUpdate(
-        { guildId, memberId },
-        { $push: { [`weekdays.${day}`]: window } },
-        { upsert: true },
-      );
-    }
-
-    await btn.update({ content: `✅ Window added.${overnightNote}`, components: [] });
-  } catch {
-    await interaction.editReply({ content: '⏱️ Confirmation timed out.', components: [] });
-  }
-}
-
-async function clearWindows(
-  interaction: Command.ChatInputCommandInteraction,
-  guildId: string,
-  memberId: string,
-  layer: 'broad' | 'weekday',
-  day: number | null,
-): Promise<void> {
-  if (layer === 'weekday' && day === null) {
-    await interaction.reply({
-      content: '❌ `day` is required for `clear-weekday`.',
-      ephemeral: true,
-    });
-    return;
-  }
-
-  await interaction.deferReply({ ephemeral: true });
-
-  if (layer === 'broad') {
-    await AvailabilityConfigModel.findOneAndUpdate(
-      { guildId, memberId },
-      { $set: { broad: [] } },
-    );
-    await interaction.editReply('✅ Broad availability windows cleared.');
-  } else {
-    await AvailabilityConfigModel.findOneAndUpdate(
-      { guildId, memberId },
-      { $unset: { [`weekdays.${day}`]: '' } },
-    );
-    await interaction.editReply(`✅ ${DAY_NAMES[day!]} availability windows cleared.`);
-  }
-}
-
-async function clearAll(
-  interaction: Command.ChatInputCommandInteraction,
-  guildId: string,
-  memberId: string,
-  userId: string,
-): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
-  await AvailabilityConfigModel.deleteOne({ guildId, memberId });
-  await interaction.editReply(`✅ Removed all availability config for <@${userId}>.`);
-}
-
-async function viewConfig(
-  interaction: Command.ChatInputCommandInteraction,
-  guildId: string,
-  memberId: string,
-  targetUser: { id: string; displayName?: string; username: string },
-): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
-  const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
-  if (!config) {
-    await interaction.editReply(`No availability config set for <@${targetUser.id}>.`);
-    return;
-  }
-
-  const embed = new EmbedBuilder()
-    .setTitle(`Availability — ${targetUser.username}`)
-    .setColor(0x5865f2);
-
-  if (config.broad.length > 0) {
-    embed.addFields({
-      name: 'Broad',
-      value: config.broad.map(windowSummary).join('\n'),
-    });
-  } else {
-    embed.addFields({ name: 'Broad', value: 'None configured' });
-  }
-
-  const weekdayMap = config.weekdays instanceof Map ? config.weekdays : new Map(Object.entries(config.weekdays ?? {}));
-  for (let d = 0; d < 7; d++) {
-    const windows = weekdayMap.get(String(d));
-    if (windows && windows.length > 0) {
-      embed.addFields({
-        name: DAY_NAMES[d],
-        value: windows.map(windowSummary).join('\n'),
-      });
-    }
-  }
-
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply(
+    `✅ Availability for <@${memberId}> set to **${LEVEL_LABELS[status]}** until <t:${expiresUnix}:t> (<t:${expiresUnix}:R>).`,
+  );
 }

@@ -1,54 +1,10 @@
 import { EmbedBuilder, type SlashCommandSubcommandBuilder } from 'discord.js';
 import type { Command } from '@sapphire/framework';
+import { container } from '@sapphire/framework';
 import spacetime from 'spacetime';
 import { TimeTrackConfigModel, AvailabilityConfigModel } from '@bedge/database';
-import type { AvailabilityWindow } from '@bedge/types';
-
-type StoplightLevel = 'green' | 'yellow' | 'orange' | 'red';
-
-const STOPLIGHT_LABELS: Record<StoplightLevel, string> = {
-  green: '🟢 Definitely available',
-  yellow: '🟡 Maybe available',
-  orange: '🟠 Probably unavailable',
-  red: '🔴 Unavailable',
-};
-
-const STOPLIGHT_COLORS: Record<StoplightLevel, number> = {
-  green: 0x57f287,
-  yellow: 0xfee75c,
-  orange: 0xe67e22,
-  red: 0xed4245,
-};
-
-function timeToMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function isInWindow(currentMinutes: number, window: AvailabilityWindow): boolean {
-  const start = timeToMinutes(window.start);
-  const end = timeToMinutes(window.end);
-  if (end < start) return currentMinutes >= start || currentMinutes < end;
-  return currentMinutes >= start && currentMinutes < end;
-}
-
-function computeLevel(
-  currentMinutes: number,
-  currentDay: number,
-  weekdays: Map<string, AvailabilityWindow[] | null> | Record<string, AvailabilityWindow[] | null>,
-  broad: AvailabilityWindow[],
-): StoplightLevel {
-  const weekdayWindows =
-    weekdays instanceof Map
-      ? weekdays.get(String(currentDay)) ?? null
-      : weekdays[String(currentDay)] ?? null;
-
-  const layer = weekdayWindows !== null ? weekdayWindows : broad;
-  for (const window of layer ?? []) {
-    if (isInWindow(currentMinutes, window)) return window.level as StoplightLevel;
-  }
-  return 'red';
-}
+import type { AvailabilityLevel } from '@bedge/types';
+import { computeLevel, LEVEL_LABELS, LEVEL_COLORS } from '../../lib/availability.js';
 
 export function buildInfoSubcommand(sub: SlashCommandSubcommandBuilder): SlashCommandSubcommandBuilder {
   return sub
@@ -66,7 +22,9 @@ export async function handleInfo(interaction: Command.ChatInputCommandInteractio
 
   const config = await TimeTrackConfigModel.findOne({ guildId, memberId: targetUser.id });
   if (!config) {
-    await interaction.editReply(`<@${targetUser.id}> is not currently tracked. Ask a server admin to run \`/time track\` first.`);
+    await interaction.editReply(
+      `<@${targetUser.id}> is not currently tracked. Ask a server admin to run \`/time track\` first.`,
+    );
     return;
   }
 
@@ -80,20 +38,36 @@ export async function handleInfo(interaction: Command.ChatInputCommandInteractio
 
   const localTime = s.format('time-24') as string;
   const localDate = s.format('nice') as string;
+  const currentMinutes = s.hour() * 60 + s.minute();
+  const currentDay = s.day();
 
   const avail = await AvailabilityConfigModel.findOne({ guildId, memberId: targetUser.id });
-  let level: StoplightLevel = 'red';
-  if (avail) {
-    const currentMinutes = s.hour() * 60 + s.minute();
-    const currentDay = s.day();
-    level = computeLevel(currentMinutes, currentDay, avail.weekdays as any, avail.broad);
-  }
+
+  container.logger.debug(
+    `info: member=${targetUser.id} tz=${config.timezone} minutes=${currentMinutes} day=${currentDay} hasConfig=${!!avail}`,
+  );
+
+  const level = computeLevel(currentMinutes, currentDay, avail ?? null);
+
+  const hasActiveOverride = avail?.override && avail.override.expiresAt > new Date();
+  container.logger.debug(
+    `info: member=${targetUser.id} computed level=${level}` +
+    (hasActiveOverride ? ` (override until ${avail!.override!.expiresAt.toISOString()})` : ''),
+  );
 
   const guildMember = await interaction.guild?.members.fetch(targetUser.id).catch(() => null);
   const displayName = guildMember?.displayName ?? targetUser.username;
 
+  let availabilityText = LEVEL_LABELS[level as AvailabilityLevel] ?? LEVEL_LABELS['red'];
+  if (hasActiveOverride) {
+    const expiresUnix = Math.floor(avail!.override!.expiresAt.getTime() / 1000);
+    availabilityText += ` *(override until <t:${expiresUnix}:t>)*`;
+  } else if (!avail) {
+    availabilityText += ' *(default)*';
+  }
+
   const embed = new EmbedBuilder()
-    .setColor(STOPLIGHT_COLORS[level])
+    .setColor(LEVEL_COLORS[level as AvailabilityLevel] ?? LEVEL_COLORS['red'])
     .setAuthor({ name: displayName, iconURL: targetUser.displayAvatarURL() })
     .addFields(
       { name: 'Local Time', value: localTime, inline: true },
@@ -101,10 +75,9 @@ export async function handleInfo(interaction: Command.ChatInputCommandInteractio
       { name: '​', value: '​', inline: true },
       { name: 'Timezone', value: meta.display || config.timezone, inline: true },
       { name: 'Offset', value: offsetStr, inline: true },
-      { name: 'Availability', value: avail ? STOPLIGHT_LABELS[level] : '🔴 No availability config', inline: true },
+      { name: 'Availability', value: availabilityText, inline: true },
     );
 
-  // If the invoker is also tracked, show their time for easy comparison
   if (interaction.user.id !== targetUser.id) {
     const invokerConfig = await TimeTrackConfigModel.findOne({
       guildId,

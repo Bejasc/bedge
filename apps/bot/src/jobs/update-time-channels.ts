@@ -2,58 +2,13 @@ import { ChannelType, PermissionFlagsBits, type VoiceChannel } from 'discord.js'
 import type { SapphireClient } from '@sapphire/framework';
 import spacetime from 'spacetime';
 import { TimeTrackConfigModel, AvailabilityConfigModel } from '@bedge/database';
-import type { AvailabilityWindow } from '@bedge/types';
 import { buildChannelName, currentTimeIn } from '../lib/time-channel.js';
-
-type StoplightDot = '🟢' | '🟡' | '🟠' | '🔴';
-
-const DOTS: Record<string, StoplightDot> = {
-  green: '🟢',
-  yellow: '🟡',
-  orange: '🟠',
-  red: '🔴',
-};
-
-function timeToMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
-
-function isInWindow(currentMinutes: number, window: AvailabilityWindow): boolean {
-  const start = timeToMinutes(window.start);
-  const end = timeToMinutes(window.end);
-  if (end < start) {
-    // Overnight window: wraps past midnight
-    return currentMinutes >= start || currentMinutes < end;
-  }
-  return currentMinutes >= start && currentMinutes < end;
-}
-
-export function computeStoplight(
-  currentMinutes: number,
-  currentDay: number,
-  weekdays: Map<string, AvailabilityWindow[] | null> | Record<string, AvailabilityWindow[] | null>,
-  broad: AvailabilityWindow[],
-): StoplightDot {
-  const weekdayWindows =
-    weekdays instanceof Map
-      ? weekdays.get(String(currentDay)) ?? null
-      : weekdays[String(currentDay)] ?? null;
-
-  const layer = weekdayWindows !== null ? weekdayWindows : broad;
-
-  for (const window of layer ?? []) {
-    if (isInWindow(currentMinutes, window)) {
-      return DOTS[window.level] ?? '🔴';
-    }
-  }
-
-  return '🔴';
-}
+import { computeLevel, levelToStoplightDot } from '../lib/availability.js';
 
 export function createUpdateTimeChannelsJob(client: SapphireClient) {
   return async (): Promise<void> => {
     const configs = await TimeTrackConfigModel.find({});
+    client.logger.debug(`update-time-channels: processing ${configs.length} tracked member(s)`);
     if (configs.length === 0) return;
 
     for (const config of configs) {
@@ -71,9 +26,13 @@ export function createUpdateTimeChannelsJob(client: SapphireClient) {
           memberId: config.memberId,
         });
 
-        const dot = avail
-          ? computeStoplight(currentMinutes, currentDay, avail.weekdays as any, avail.broad)
-          : undefined;
+        const level = computeLevel(currentMinutes, currentDay, avail ?? null);
+        const dot = levelToStoplightDot(level);
+
+        client.logger.debug(
+          `update-time-channels: member=${config.memberId} tz=${config.timezone} minutes=${currentMinutes} day=${currentDay} → ${level} ${dot}` +
+          (avail?.override?.expiresAt ? ` (override until ${avail.override.expiresAt.toISOString()})` : ' (no override)'),
+        );
 
         const targetName = buildChannelName(config.alias, timeStr, dot);
 
@@ -82,7 +41,6 @@ export function createUpdateTimeChannelsJob(client: SapphireClient) {
           : undefined;
 
         if (!channel) {
-          // Channel missing — attempt to fetch, then recreate if still absent
           if (config.channelId) {
             try {
               channel = (await guild.channels.fetch(config.channelId)) as VoiceChannel | null ?? undefined;
@@ -113,7 +71,7 @@ export function createUpdateTimeChannelsJob(client: SapphireClient) {
             client.logger.info(
               `update-time-channels: recreated channel ${channel.id} for member ${config.memberId} in guild ${guild.id}`,
             );
-            continue; // Name already set via create
+            continue;
           }
         }
 
