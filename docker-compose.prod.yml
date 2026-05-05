@@ -1,0 +1,30 @@
+services:
+  bot:
+    image: ghcr.io/bejasc/bedge-bot:latest
+    env_file:
+      - /etc/bedge-bot/bedge-bot.env
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - bedge
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - bedge
+
+volumes:
+  mongo-data:
+
+networks:
+  bedge:
