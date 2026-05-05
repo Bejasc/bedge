@@ -36,7 +36,9 @@ jobs:
         if: failure() && github.ref == 'refs/heads/master'
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOYS }}
+          DISCORD_USERNAME: ${{ secrets.DISCORD_WEBHOOK_USERNAME }}
+          DISCORD_AVATAR_URL: ${{ secrets.DISCORD_WEBHOOK_AVATAR_URL }}
         run: |
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"❌ bedge-bot CI failed\",\"description\":\"\`${{ github.ref_name }}\` @ \`${GITHUB_SHA:0:7}\` — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"color\":15158332}]}"
+            -d "{\"username\":\"$DISCORD_USERNAME\",\"avatar_url\":\"$DISCORD_AVATAR_URL\",\"embeds\":[{\"title\":\"❌ bedge-bot CI failed\",\"description\":\"\`${{ github.ref_name }}\` @ \`${GITHUB_SHA:0:7}\` — ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"color\":15158332}]}"

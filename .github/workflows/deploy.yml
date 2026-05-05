@@ -77,10 +77,12 @@ jobs:
         if: always()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOYS }}
+          DISCORD_USERNAME: ${{ secrets.DISCORD_WEBHOOK_USERNAME }}
+          DISCORD_AVATAR_URL: ${{ secrets.DISCORD_WEBHOOK_AVATAR_URL }}
         run: |
           STATUS="${{ job.status }}"
           SHA="${{ github.event.workflow_run.head_sha }}"
           if [ "$STATUS" = "success" ]; then COLOR=3066993; EMOJI="✅"; else COLOR=15158332; EMOJI="❌"; fi
           curl -s -X POST "$DISCORD_WEBHOOK" \
             -H "Content-Type: application/json" \
-            -d "{\"embeds\":[{\"title\":\"$EMOJI bedge-bot deploy $STATUS\",\"description\":\"\`${SHA:0:7}\`\",\"color\":$COLOR}]}"
+            -d "{\"username\":\"$DISCORD_USERNAME\",\"avatar_url\":\"$DISCORD_AVATAR_URL\",\"embeds\":[{\"title\":\"$EMOJI bedge-bot deploy $STATUS\",\"description\":\"\`${SHA:0:7}\`\",\"color\":$COLOR}]}"
