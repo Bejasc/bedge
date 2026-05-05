@@ -9,4 +9,5 @@ export const config = {
   applicationId: required('DISCORD_APPLICATION_ID'),
   mongoUri: required('MONGODB_URI'),
   logLevel: process.env.LOG_LEVEL ?? 'info',
+  timeChannelCron: process.env.TIME_CHANNEL_CRON ?? '*/15 * * * *',
 };

@@ -20,7 +20,7 @@ async function main(): Promise<void> {
   try {
     await connectDatabase(config.mongoUri);
     container.logger.info('Database connected');
-    taskManager.register('update-time-channels', '*/15 * * * *', createUpdateTimeChannelsJob(client));
+    taskManager.register('update-time-channels', config.timeChannelCron, createUpdateTimeChannelsJob(client));
     await client.login(config.discordToken);
   } catch (error) {
     container.logger.fatal('Startup failed:', error instanceof Error ? error : new Error(String(error)));
