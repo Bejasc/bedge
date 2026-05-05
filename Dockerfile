@@ -15,4 +15,5 @@ COPY . .
 RUN pnpm -r build
 
 ENV NODE_ENV=production
-CMD ["node", "apps/bot/dist/index.js"]
+WORKDIR /app/apps/bot
+CMD ["node", "dist/index.js"]
