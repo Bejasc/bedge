@@ -6,6 +6,16 @@ import { connectDatabase } from '@bedge/database';
 import { taskManager } from './lib/task-manager.js';
 import { createUpdateTimeChannelsJob } from './jobs/update-time-channels.js';
 
+process.on('unhandledRejection', (reason) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  container.logger.fatal('Unhandled promise rejection', error);
+});
+
+process.on('uncaughtException', (error) => {
+  container.logger.fatal('Uncaught exception', error);
+  process.exit(1);
+});
+
 async function main(): Promise<void> {
   try {
     await connectDatabase(config.mongoUri);
@@ -13,7 +23,7 @@ async function main(): Promise<void> {
     taskManager.register('update-time-channels', '*/15 * * * *', createUpdateTimeChannelsJob(client));
     await client.login(config.discordToken);
   } catch (error) {
-    container.logger.fatal('Startup failed:', error);
+    container.logger.fatal('Startup failed:', error instanceof Error ? error : new Error(String(error)));
     process.exit(1);
   }
 }

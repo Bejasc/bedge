@@ -20,15 +20,14 @@ export async function handleUntrack(interaction: Command.ChatInputCommandInterac
     return;
   }
 
+  await interaction.deferReply({ ephemeral: true });
+
   const guild = interaction.guild!;
   const member = interaction.options.getUser('member', true);
 
   const config = await TimeTrackConfigModel.findOne({ guildId: guild.id, memberId: member.id });
   if (!config) {
-    await interaction.reply({
-      content: `No tracking config found for <@${member.id}>.`,
-      ephemeral: true,
-    });
+    await interaction.editReply(`No tracking config found for <@${member.id}>.`);
     return;
   }
 
@@ -43,8 +42,5 @@ export async function handleUntrack(interaction: Command.ChatInputCommandInterac
 
   await TimeTrackConfigModel.deleteOne({ _id: config._id });
 
-  await interaction.reply({
-    content: `✅ Stopped tracking <@${member.id}> and removed their voice channel.`,
-    ephemeral: true,
-  });
+  await interaction.editReply(`✅ Stopped tracking <@${member.id}> and removed their voice channel.`);
 }
