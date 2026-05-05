@@ -10,7 +10,8 @@ import {
 import type { Command } from '@sapphire/framework';
 import { container } from '@sapphire/framework';
 import type { SapphireClient } from '@sapphire/framework';
-import { AvailabilityConfigModel } from '@bedge/database';
+import spacetime from 'spacetime';
+import { AvailabilityConfigModel, TimeTrackConfigModel } from '@bedge/database';
 import type { AvailabilityConfigDocument } from '@bedge/database';
 import type { AvailabilityLevel, AvailabilityWindow } from '@bedge/types';
 import { LEVEL_LABELS, parseDuration, timeToMinutes } from '../../lib/availability.js';
@@ -85,9 +86,65 @@ async function resolveTarget(
   return { targetUser, allowed: true };
 }
 
+function hhmmToDiscordTs(hhmm: string, ianaZone: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const unix = Math.floor(spacetime.now(ianaZone).hour(h).minute(m).second(0).millisecond(0).epoch / 1000);
+  return `<t:${unix}:t>`;
+}
+
+function buildInfoLines(config: AvailabilityConfigDocument, ianaZone: string | null): string[] {
+  const lines: string[] = [];
+
+  function renderWindows(windows: AvailabilityWindow[]): void {
+    // Group by level so same-level windows share a line
+    const byLevel = new Map<AvailabilityLevel, AvailabilityWindow[]>();
+    for (const w of windows) {
+      const lvl = w.level as AvailabilityLevel;
+      if (!byLevel.has(lvl)) byLevel.set(lvl, []);
+      byLevel.get(lvl)!.push(w);
+    }
+    for (const [level, wins] of byLevel) {
+      const times = wins
+        .map((w) =>
+          ianaZone
+            ? `${hhmmToDiscordTs(w.start, ianaZone)} to ${hhmmToDiscordTs(w.end, ianaZone)}`
+            : `\`${w.start}\` to \`${w.end}\``,
+        )
+        .join('  |  ');
+      lines.push(LEVEL_LABELS[level]);
+      lines.push(times);
+    }
+  }
+
+  // Broad first as the base rule
+  if (config.broad.length > 0) {
+    lines.push('**Every day**');
+    renderWindows(config.broad);
+    lines.push('');
+  }
+
+  // Weekday-specific overrides
+  const weekdays = config.weekdays instanceof Map
+    ? config.weekdays
+    : new Map(Object.entries(config.weekdays ?? {}));
+
+  for (let d = 0; d < 7; d++) {
+    const windows = weekdays.get(String(d));
+    if (windows && windows.length > 0) {
+      lines.push(`**${DAY_NAMES[d]}**`);
+      renderWindows(windows);
+      lines.push('');
+    }
+  }
+
+  return lines;
+}
+
 export async function handleAvailabilityView(interaction: Command.ChatInputCommandInteraction): Promise<void> {
   const { targetUser, allowed } = await resolveTarget(interaction);
   if (!allowed) return;
+
+  const format = interaction.options.getString('format') ?? 'info';
 
   await interaction.deferReply();
 
@@ -95,55 +152,81 @@ export async function handleAvailabilityView(interaction: Command.ChatInputComma
   const memberId = targetUser.id;
   const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
 
-  container.logger.debug(`availability view: member=${memberId} hasConfig=${!!config}`);
+  container.logger.debug(`availability view: member=${memberId} format=${format} hasConfig=${!!config}`);
+
+  const noConfigMessage = [
+    `No custom availability configured for <@${memberId}>. **Default rules apply:**`,
+    '- `00:00–08:00` → 🔴 Unavailable',
+    '- `08:00–18:00` Mon–Fri → 🟠 Probably unavailable',
+    '- All other times → 🟡 Maybe available',
+    '',
+    'Use `/availability set` to configure custom windows.',
+  ].join('\n');
 
   if (!config) {
-    await interaction.editReply({
-      content: [
-        `No custom availability configured for <@${memberId}>. **Default rules apply:**`,
-        '- `00:00–08:00` → 🔴 Unavailable',
-        '- `08:00–18:00` Mon–Fri → 🟠 Probably unavailable',
-        '- All other times → 🟡 Maybe available',
-        '',
-        'Use `/availability set` to configure custom windows.',
-      ].join('\n'),
-    });
+    await interaction.editReply({ content: noConfigMessage });
     return;
   }
 
-  const jsonObj = {
-    broad: config.broad,
-    weekdays: Object.fromEntries(
-      config.weekdays instanceof Map
-        ? config.weekdays.entries()
-        : Object.entries(config.weekdays ?? {}),
-    ),
-  };
+  // Override footer — appended regardless of format
+  let overrideFooter: string | null = null;
+  if (config.override && config.override.expiresAt > new Date()) {
+    const unixTs = Math.floor(config.override.expiresAt.getTime() / 1000);
+    const label = LEVEL_LABELS[config.override.level as AvailabilityLevel];
+    overrideFooter = `**Active override:** ${label} until <t:${unixTs}:t> (<t:${unixTs}:R>)`;
+    container.logger.debug(`availability view: member=${memberId} active override level=${config.override.level} expires=${config.override.expiresAt.toISOString()}`);
+  }
 
-  const jsonStr = JSON.stringify(jsonObj, null, 2);
-  const header = `**Availability config for <@${memberId}>** *(times are in their local timezone — days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat)*`;
-  const codeBlock = `\`\`\`json\n${jsonStr}\n\`\`\``;
-  const combined = `${header}\n${codeBlock}`;
+  if (format === 'json') {
+    const jsonObj = {
+      broad: config.broad,
+      weekdays: Object.fromEntries(
+        config.weekdays instanceof Map
+          ? config.weekdays.entries()
+          : Object.entries(config.weekdays ?? {}),
+      ),
+    };
+    const jsonStr = JSON.stringify(jsonObj, null, 2);
+    const header = `**Availability config for <@${memberId}>** *(times are in their local timezone — days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat)*`;
+    const codeBlock = `\`\`\`json\n${jsonStr}\n\`\`\``;
+    const combined = `${header}\n${codeBlock}`;
 
-  if (combined.length <= MAX_MSG) {
-    await interaction.editReply({ content: combined });
+    if (combined.length <= MAX_MSG) {
+      await interaction.editReply({ content: combined });
+    } else {
+      await interaction.editReply({ content: header });
+      for (const chunk of chunkCodeBlock(jsonStr, 'json')) {
+        await interaction.followUp({ content: chunk });
+      }
+    }
   } else {
-    await interaction.editReply({ content: header });
-    for (const chunk of chunkCodeBlock(jsonStr, 'json')) {
-      await interaction.followUp({ content: chunk });
+    // Info mode — fetch timezone for Discord timestamp conversion
+    const trackConfig = await TimeTrackConfigModel.findOne({ guildId, memberId });
+    const ianaZone = trackConfig?.timezone ?? null;
+    if (!ianaZone) {
+      container.logger.debug(`availability view: member=${memberId} has no track config — showing raw HH:mm times`);
+    }
+
+    const lines = buildInfoLines(config, ianaZone);
+    if (lines.length === 0) {
+      await interaction.editReply({ content: noConfigMessage });
+      return;
+    }
+
+    const header = `**Availability — <@${memberId}>**${!ianaZone ? ' *(times in member\'s local timezone)*' : ''}`;
+    const body = lines.join('\n').trimEnd();
+    const combined = `${header}\n\n${body}`;
+
+    if (combined.length <= MAX_MSG) {
+      await interaction.editReply({ content: combined });
+    } else {
+      await interaction.editReply({ content: combined.slice(0, MAX_MSG) });
+      await interaction.followUp({ content: combined.slice(MAX_MSG) });
     }
   }
 
-  if (config.override) {
-    const now = new Date();
-    if (config.override.expiresAt > now) {
-      const unixTs = Math.floor(config.override.expiresAt.getTime() / 1000);
-      const label = LEVEL_LABELS[config.override.level as AvailabilityLevel];
-      container.logger.debug(`availability view: member=${memberId} has active override level=${config.override.level} expires=${config.override.expiresAt.toISOString()}`);
-      await interaction.followUp({ content: `**Active override:** ${label} until <t:${unixTs}:t> (<t:${unixTs}:R>)` });
-    } else {
-      container.logger.debug(`availability view: member=${memberId} override expired at ${config.override.expiresAt.toISOString()}`);
-    }
+  if (overrideFooter) {
+    await interaction.followUp({ content: overrideFooter });
   }
 }
 

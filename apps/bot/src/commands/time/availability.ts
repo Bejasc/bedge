@@ -20,7 +20,16 @@ export class AvailabilityCommand extends Command {
         .addSubcommand((sub) =>
           sub
             .setName('view')
-            .setDescription('View your availability config as JSON')
+            .setDescription('View availability config')
+            .addStringOption((o) =>
+              o
+                .setName('format')
+                .setDescription('Display format (default: info)')
+                .addChoices(
+                  { name: 'Info', value: 'info' },
+                  { name: 'JSON', value: 'json' },
+                ),
+            )
             .addUserOption((o) =>
               o.setName('member').setDescription('Member to view (admins only; defaults to you)'),
             ),
