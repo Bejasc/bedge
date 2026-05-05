@@ -126,8 +126,8 @@ export function createUpdateTimeChannelsJob(client: SapphireClient) {
         }
       } catch (err) {
         client.logger.error(
-          `update-time-channels: error processing member ${config.memberId} in guild ${config.guildId}:`,
-          err,
+          `update-time-channels: failed for member ${config.memberId} in guild ${config.guildId}`,
+          err instanceof Error ? err : new Error(String(err)),
         );
       }
     }
