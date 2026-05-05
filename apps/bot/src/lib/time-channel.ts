@@ -22,23 +22,18 @@ export function buildChannelName(alias: string, timeStr: string, dot?: string): 
   return `${alias} approx time: ${timeStr}${dotPart}`;
 }
 
-// Inherits the category's permission overwrites but ensures @everyone cannot connect.
-// Visibility (view channel) follows whatever the category has set.
+// Inherits the category's permission overwrites but ensures nobody can connect.
+// Connect is stripped from allow and added to deny on every overwrite entry so that
+// no role or user granted Connect in the category can join. Visibility follows the category.
 export function buildChannelPermissions(category: CategoryChannel, everyoneRoleId: string): OverwriteData[] {
   const hasEveryone = category.permissionOverwrites.cache.has(everyoneRoleId);
 
-  const overwrites: OverwriteData[] = [...category.permissionOverwrites.cache.values()].map((ow) => {
-    if (ow.id === everyoneRoleId) {
-      return {
-        id: ow.id,
-        type: ow.type,
-        // Remove Connect from allow (if granted), then explicitly deny it
-        allow: ow.allow.bitfield & ~PermissionFlagsBits.Connect,
-        deny: ow.deny.bitfield | PermissionFlagsBits.Connect,
-      };
-    }
-    return { id: ow.id, type: ow.type, allow: ow.allow.bitfield, deny: ow.deny.bitfield };
-  });
+  const overwrites: OverwriteData[] = [...category.permissionOverwrites.cache.values()].map((ow) => ({
+    id: ow.id,
+    type: ow.type,
+    allow: ow.allow.bitfield & ~PermissionFlagsBits.Connect,
+    deny: ow.deny.bitfield | PermissionFlagsBits.Connect,
+  }));
 
   if (!hasEveryone) {
     overwrites.push({ id: everyoneRoleId, type: OverwriteType.Role, deny: [PermissionFlagsBits.Connect] });
