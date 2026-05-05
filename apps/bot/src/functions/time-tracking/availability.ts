@@ -18,8 +18,21 @@ import { updateMemberTimeChannel } from '../../jobs/update-time-channels.js';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const HHMM = /^\d{2}:\d{2}$/;
+const MAX_MSG = 2000;
+const CODE_BLOCK_OVERHEAD = 11; // ```json\n + \n```
 
-// Two windows overlap if they share any minute. Touching boundaries (end == other start) is not an overlap.
+function chunkCodeBlock(text: string, lang: string): string[] {
+  const maxContent = MAX_MSG - lang.length - CODE_BLOCK_OVERHEAD;
+  const chunks: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    chunks.push(`\`\`\`${lang}\n${text.slice(i, i + maxContent)}\n\`\`\``);
+    i += maxContent;
+  }
+  return chunks;
+}
+
+// Two windows overlap if they share any minute. Touching boundaries is not an overlap.
 function windowsOverlap(a: AvailabilityWindow, b: AvailabilityWindow): boolean {
   const aS = timeToMinutes(a.start);
   const aE = timeToMinutes(a.end);
@@ -28,19 +41,10 @@ function windowsOverlap(a: AvailabilityWindow, b: AvailabilityWindow): boolean {
   const aOvernight = aE < aS;
   const bOvernight = bE < bS;
 
-  if (!aOvernight && !bOvernight) {
-    return aS < bE && bS < aE;
-  }
-  if (aOvernight && !bOvernight) {
-    // A covers [aS, 1440) ∪ [0, aE)
-    return aS < bE || bS < aE;
-  }
-  if (!aOvernight && bOvernight) {
-    // B covers [bS, 1440) ∪ [0, bE)
-    return bS < aE || aS < bE;
-  }
-  // Both overnight — both cross midnight, always share some time
-  return true;
+  if (!aOvernight && !bOvernight) return aS < bE && bS < aE;
+  if (aOvernight && !bOvernight) return aS < bE || bS < aE;
+  if (!aOvernight && bOvernight) return bS < aE || aS < bE;
+  return true; // both overnight — both cross midnight
 }
 
 function getExistingWindows(config: AvailabilityConfigDocument | null, day: string): AvailabilityWindow[] {
@@ -85,7 +89,7 @@ export async function handleAvailabilityView(interaction: Command.ChatInputComma
   const { targetUser, allowed } = await resolveTarget(interaction);
   if (!allowed) return;
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const guildId = interaction.guildId!;
   const memberId = targetUser.id;
@@ -117,21 +121,30 @@ export async function handleAvailabilityView(interaction: Command.ChatInputComma
   };
 
   const jsonStr = JSON.stringify(jsonObj, null, 2);
-  let content = `**Availability config for <@${memberId}>** *(times are in their local timezone — days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat)*\n\`\`\`json\n${jsonStr}\n\`\`\``;
+  const header = `**Availability config for <@${memberId}>** *(times are in their local timezone — days: 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat)*`;
+  const codeBlock = `\`\`\`json\n${jsonStr}\n\`\`\``;
+  const combined = `${header}\n${codeBlock}`;
+
+  if (combined.length <= MAX_MSG) {
+    await interaction.editReply({ content: combined });
+  } else {
+    await interaction.editReply({ content: header });
+    for (const chunk of chunkCodeBlock(jsonStr, 'json')) {
+      await interaction.followUp({ content: chunk });
+    }
+  }
 
   if (config.override) {
     const now = new Date();
     if (config.override.expiresAt > now) {
       const unixTs = Math.floor(config.override.expiresAt.getTime() / 1000);
       const label = LEVEL_LABELS[config.override.level as AvailabilityLevel];
-      content += `\n**Active override:** ${label} until <t:${unixTs}:t> (<t:${unixTs}:R>)`;
       container.logger.debug(`availability view: member=${memberId} has active override level=${config.override.level} expires=${config.override.expiresAt.toISOString()}`);
+      await interaction.followUp({ content: `**Active override:** ${label} until <t:${unixTs}:t> (<t:${unixTs}:R>)` });
     } else {
       container.logger.debug(`availability view: member=${memberId} override expired at ${config.override.expiresAt.toISOString()}`);
     }
   }
-
-  await interaction.editReply({ content });
 }
 
 export async function handleAvailabilitySet(interaction: Command.ChatInputCommandInteraction): Promise<void> {
@@ -211,7 +224,6 @@ export async function handleAvailabilitySet(interaction: Command.ChatInputComman
     return;
   }
 
-  // No overlap — append directly
   await saveWindows(guildId, memberId, day, [...existing, newWindow]);
 
   container.logger.debug(
@@ -292,7 +304,7 @@ export async function handleAvailabilityOverride(interaction: Command.ChatInputC
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
 
   const guildId = interaction.guildId!;
   const memberId = targetUser.id;
