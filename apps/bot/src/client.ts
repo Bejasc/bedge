@@ -23,5 +23,8 @@ export const client = new SapphireClient({
     GatewayIntentBits.GuildModeration,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.GuildMember],
-  logger: new BotLogger(inner, LogLevel.Info),
+  logger: {
+    instance: new BotLogger(inner, LogLevel.Info),
+    level: LogLevel.Info,
+  },
 });
