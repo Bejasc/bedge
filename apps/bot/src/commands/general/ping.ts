@@ -12,12 +12,11 @@ export class PingCommand extends Command {
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction): Promise<void> {
-    const sent = await interaction.reply({ content: 'Pinging...', fetchReply: true });
-    const roundTrip = sent.createdTimestamp - interaction.createdTimestamp;
+    const before = Date.now();
+    await interaction.deferReply();
+    const roundTrip = Date.now() - before;
     const heartbeat = Math.round(this.container.client.ws.ping);
 
-    await interaction.editReply(
-      `Pong! Round trip: \`${roundTrip}ms\` | Heartbeat: \`${heartbeat}ms\``
-    );
+    await interaction.editReply(`Pong! Round trip: \`${roundTrip}ms\` | Heartbeat: \`${heartbeat}ms\``);
   }
 }

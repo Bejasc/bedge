@@ -213,21 +213,20 @@ async function clearWindows(
     return;
   }
 
+  await interaction.deferReply({ ephemeral: true });
+
   if (layer === 'broad') {
     await AvailabilityConfigModel.findOneAndUpdate(
       { guildId, memberId },
       { $set: { broad: [] } },
     );
-    await interaction.reply({ content: '✅ Broad availability windows cleared.', ephemeral: true });
+    await interaction.editReply('✅ Broad availability windows cleared.');
   } else {
     await AvailabilityConfigModel.findOneAndUpdate(
       { guildId, memberId },
       { $unset: { [`weekdays.${day}`]: '' } },
     );
-    await interaction.reply({
-      content: `✅ ${DAY_NAMES[day!]} availability windows cleared.`,
-      ephemeral: true,
-    });
+    await interaction.editReply(`✅ ${DAY_NAMES[day!]} availability windows cleared.`);
   }
 }
 
@@ -237,11 +236,9 @@ async function clearAll(
   memberId: string,
   userId: string,
 ): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
   await AvailabilityConfigModel.deleteOne({ guildId, memberId });
-  await interaction.reply({
-    content: `✅ Removed all availability config for <@${userId}>.`,
-    ephemeral: true,
-  });
+  await interaction.editReply(`✅ Removed all availability config for <@${userId}>.`);
 }
 
 async function viewConfig(
@@ -250,12 +247,10 @@ async function viewConfig(
   memberId: string,
   targetUser: { id: string; displayName?: string; username: string },
 ): Promise<void> {
+  await interaction.deferReply({ ephemeral: true });
   const config = await AvailabilityConfigModel.findOne({ guildId, memberId });
   if (!config) {
-    await interaction.reply({
-      content: `No availability config set for <@${targetUser.id}>.`,
-      ephemeral: true,
-    });
+    await interaction.editReply(`No availability config set for <@${targetUser.id}>.`);
     return;
   }
 
@@ -283,5 +278,5 @@ async function viewConfig(
     }
   }
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.editReply({ embeds: [embed] });
 }

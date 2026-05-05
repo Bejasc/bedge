@@ -60,15 +60,13 @@ export function buildInfoSubcommand(sub: SlashCommandSubcommandBuilder): SlashCo
 }
 
 export async function handleInfo(interaction: Command.ChatInputCommandInteraction): Promise<void> {
+  await interaction.deferReply();
   const targetUser = interaction.options.getUser('member', true);
   const guildId = interaction.guildId!;
 
   const config = await TimeTrackConfigModel.findOne({ guildId, memberId: targetUser.id });
   if (!config) {
-    await interaction.reply({
-      content: `<@${targetUser.id}> is not currently tracked. Ask a server admin to run \`/time track\` first.`,
-      ephemeral: true,
-    });
+    await interaction.editReply(`<@${targetUser.id}> is not currently tracked. Ask a server admin to run \`/time track\` first.`);
     return;
   }
 
@@ -122,5 +120,5 @@ export async function handleInfo(interaction: Command.ChatInputCommandInteractio
     }
   }
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed] });
 }
