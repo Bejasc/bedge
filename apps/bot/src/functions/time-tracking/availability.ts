@@ -111,7 +111,7 @@ export async function handleAvailabilitySet(interaction: Command.ChatInputComman
       new ActionRowBuilder<TextInputBuilder>().addComponents(
         new TextInputBuilder()
           .setCustomId('json')
-          .setLabel('JSON (times in local timezone, days 0=Sun…6=Sat)')
+          .setLabel('JSON config (local tz — 0=Sun … 6=Sat)')
           .setStyle(TextInputStyle.Paragraph)
           .setValue(JSON.stringify(jsonObj, null, 2))
           .setRequired(true),
