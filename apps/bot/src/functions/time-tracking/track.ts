@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  CategoryChannel,
   ChannelType,
   EmbedBuilder,
   PermissionFlagsBits,
@@ -11,7 +12,7 @@ import {
 import type { Command } from '@sapphire/framework';
 import { TimeTrackConfigModel } from '@bedge/database';
 import { parseTimezone } from '../../lib/timezone.js';
-import { buildChannelName, currentTimeIn } from '../../lib/time-channel.js';
+import { buildChannelName, buildChannelPermissions, currentTimeIn } from '../../lib/time-channel.js';
 
 export function buildTrackSubcommand(sub: SlashCommandSubcommandBuilder): SlashCommandSubcommandBuilder {
   return sub
@@ -104,13 +105,16 @@ export async function handleTrack(interaction: Command.ChatInputCommandInteracti
       return;
     }
 
+    const categoryChannel = guild.channels.cache.get(category.id) as CategoryChannel | undefined;
+    const permissionOverwrites = categoryChannel
+      ? buildChannelPermissions(categoryChannel, guild.roles.everyone.id)
+      : [{ id: guild.roles.everyone.id, deny: [PermissionFlagsBits.Connect] }];
+
     const channel = (await guild.channels.create({
       name: buildChannelName(alias, '--:--'),
       type: ChannelType.GuildVoice,
       parent: category.id,
-      permissionOverwrites: [
-        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.Connect] },
-      ],
+      permissionOverwrites,
     })) as VoiceChannel;
 
     await TimeTrackConfigModel.create({

@@ -1,8 +1,8 @@
-import { ChannelType, PermissionFlagsBits, type VoiceChannel } from 'discord.js';
+import { CategoryChannel, ChannelType, PermissionFlagsBits, type VoiceChannel } from 'discord.js';
 import type { SapphireClient } from '@sapphire/framework';
 import spacetime from 'spacetime';
 import { TimeTrackConfigModel, AvailabilityConfigModel } from '@bedge/database';
-import { buildChannelName, currentTimeIn } from '../lib/time-channel.js';
+import { buildChannelName, buildChannelPermissions, currentTimeIn } from '../lib/time-channel.js';
 import { computeLevel, levelToStoplightDot } from '../lib/availability.js';
 
 export async function updateMemberTimeChannel(
@@ -58,13 +58,16 @@ export async function updateMemberTimeChannel(
       return;
     }
 
+    const categoryChannel = guild.channels.cache.get(config.categoryId) as CategoryChannel | undefined;
+    const permissionOverwrites = categoryChannel
+      ? buildChannelPermissions(categoryChannel, guild.roles.everyone.id)
+      : [{ id: guild.roles.everyone.id, deny: [PermissionFlagsBits.Connect] }];
+
     channel = (await guild.channels.create({
       name: targetName,
       type: ChannelType.GuildVoice,
       parent: config.categoryId,
-      permissionOverwrites: [
-        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.Connect] },
-      ],
+      permissionOverwrites,
     })) as VoiceChannel;
 
     config.channelId = channel.id;
