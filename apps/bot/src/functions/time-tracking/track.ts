@@ -9,10 +9,11 @@ import {
   type SlashCommandSubcommandBuilder,
   type VoiceChannel,
 } from 'discord.js';
-import type { Command } from '@sapphire/framework';
+import type { Command, SapphireClient } from '@sapphire/framework';
 import { TimeTrackConfigModel } from '@bedge/database';
 import { parseTimezone } from '../../lib/timezone.js';
-import { buildChannelName, buildChannelPermissions, currentTimeIn } from '../../lib/time-channel.js';
+import { buildChannelName, buildChannelPermissions } from '../../lib/time-channel.js';
+import { updateMemberTimeChannel } from '../../jobs/update-time-channels.js';
 
 export function buildTrackSubcommand(sub: SlashCommandSubcommandBuilder): SlashCommandSubcommandBuilder {
   return sub
@@ -127,8 +128,7 @@ export async function handleTrack(interaction: Command.ChatInputCommandInteracti
     });
 
     // Immediate name update — don't wait for the next cron tick
-    const timeStr = currentTimeIn(parsed.ianaZone);
-    await channel.setName(buildChannelName(alias, timeStr));
+    await updateMemberTimeChannel(interaction.client as SapphireClient, guild.id, member.id);
 
     await btn.update({
       content: `✅ Now tracking <@${member.id}> (\`${parsed.ianaZone}\`). Voice channel created.`,
