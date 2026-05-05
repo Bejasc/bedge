@@ -54,6 +54,7 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key deploy@${{ secrets.VPS_HOST }} "
             set -e
+            echo '${{ secrets.GHCR_PAT }}' | docker login ghcr.io -u bejasc --password-stdin
             cd /opt/bedge-bot
             docker compose pull
             docker compose up -d --remove-orphans
