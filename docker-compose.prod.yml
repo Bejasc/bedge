@@ -9,19 +9,30 @@ services:
         condition: service_healthy
     networks:
       - bedge
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '3'
 
   mongo:
     image: mongo:7
+    command: ['--quiet']
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+      start_interval: 5s
     restart: unless-stopped
     networks:
       - bedge
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '3'
 
 volumes:
   mongo-data:
