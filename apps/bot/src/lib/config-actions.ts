@@ -1,8 +1,18 @@
-import type { AnySelectMenuInteraction, ButtonInteraction } from 'discord.js';
-import { MessageFlags } from 'discord.js';
+import {
+  LabelBuilder,
+  MessageFlags,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  type AnySelectMenuInteraction,
+  type ButtonInteraction,
+  type ModalSubmitInteraction,
+} from 'discord.js';
 import type { LogCategory } from '@bedge/types';
 import { getGuildConfig, updateGuildConfig, type GuildConfigData } from './guild-config.js';
-import { CATEGORY_LABELS, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
+import { CATEGORY_LABELS, configId, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
+import { DEFAULT_WELCOME, WELCOME_MAX, renderWelcomeCard, renderWelcomeText } from './events/welcome.js';
+import { quote } from './events/format.js';
 import { log } from './logs/router.js';
 import { subjectOf } from './logs/subject.js';
 import { requireTier } from './tier-check.js';
@@ -42,10 +52,22 @@ function changeFor(action: string, view: ConfigView, values: string[], config: G
     }
     case 'role-admin':
     case 'role-mod': {
-      const tier = action === 'role-admin' ? 'admin' : 'mod';
+      const label = action === 'role-admin' ? 'Admin' : 'Mod';
       return {
-        update: setOrUnset(`roles.${tier}RoleId`, value),
-        summary: value ? `${tier === 'admin' ? 'Admin' : 'Mod'} role set to <@&${value}>` : `${tier === 'admin' ? 'Admin' : 'Mod'} role cleared`,
+        update: setOrUnset(`roles.${action === 'role-admin' ? 'admin' : 'mod'}RoleId`, value),
+        summary: value ? `${label} role set to <@&${value}>` : `${label} role cleared`,
+      };
+    }
+    case 'welcomechannel':
+      return {
+        update: setOrUnset('welcome.channelId', value),
+        summary: value ? `Welcome channel set to <#${value}>` : 'Welcome channel cleared',
+      };
+    case 'welcometoggle': {
+      const enabled = !config.welcome.enabled;
+      return {
+        update: { $set: { 'welcome.enabled': enabled } },
+        summary: `Welcome messages ${enabled ? 'enabled' : 'disabled'}`,
       };
     }
     default:
@@ -54,9 +76,39 @@ function changeFor(action: string, view: ConfigView, values: string[], config: G
 }
 
 function nextView(action: string, view: ConfigView, values: string[]): ConfigView {
-  if (action === 'section') return { ...view, section: values[0] === 'roles' ? 'roles' : 'logging' };
+  if (action === 'section') return parseConfigId(`cfg:x:${values[0]}:${view.category}`)!.view;
   if (action === 'category') return { ...view, category: values[0] as LogCategory };
   return view;
+}
+
+function welcomeModal(config: GuildConfigData, view: ConfigView): ModalBuilder {
+  return new ModalBuilder()
+    .setCustomId(configId('welcomemodal', view))
+    .setTitle('Welcome message')
+    .addLabelComponents(
+      new LabelBuilder()
+        .setLabel('Message')
+        .setDescription('Placeholders: {user} {username} {server} {memberCount}')
+        .setTextInputComponent(
+          new TextInputBuilder()
+            .setCustomId('message')
+            .setStyle(TextInputStyle.Paragraph)
+            .setMaxLength(WELCOME_MAX)
+            .setRequired(false)
+            .setValue(config.welcome.message ?? DEFAULT_WELCOME),
+        ),
+    );
+}
+
+async function sendPreview(interaction: PanelInteraction, config: GuildConfigData): Promise<void> {
+  const text = renderWelcomeText(config.welcome.message, {
+    userId: interaction.user.id,
+    username: interaction.user.username,
+    server: interaction.guild.name,
+    memberCount: interaction.guild.memberCount,
+  });
+  const card = renderWelcomeCard(text, interaction.member.displayAvatarURL(), interaction.user.id);
+  await interaction.reply({ ...card, flags: card.flags | MessageFlags.Ephemeral, allowedMentions: { parse: [] } });
 }
 
 export async function handleConfigInteraction(interaction: PanelInteraction): Promise<void> {
@@ -68,6 +120,15 @@ export async function handleConfigInteraction(interaction: PanelInteraction): Pr
   const values = interaction.isAnySelectMenu() ? interaction.values : [];
   const view = nextView(action, parsed.view, values);
   let config = await getGuildConfig(interaction.guildId);
+
+  if (action === 'welcomeedit') {
+    await interaction.showModal(welcomeModal(config, view));
+    return;
+  }
+  if (action === 'welcomepreview') {
+    await sendPreview(interaction, config);
+    return;
+  }
 
   if (action === 'test') {
     const result = await log(interaction.guild, 'test', {
@@ -86,15 +147,23 @@ export async function handleConfigInteraction(interaction: PanelInteraction): Pr
   }
 
   const change = changeFor(action, view, values, config);
-  if (change) {
-    config = await updateGuildConfig(interaction.guildId, change.update);
-  }
+  if (change) config = await updateGuildConfig(interaction.guildId, change.update);
   await interaction.update(renderConfigPanel(config, interaction.guild.name, view));
+  if (change) await log(interaction.guild, 'server.config', { subject: subjectOf(interaction.member), body: change.summary });
+}
 
-  if (change) {
-    await log(interaction.guild, 'server.config', {
-      subject: subjectOf(interaction.member),
-      body: change.summary,
-    });
-  }
+export async function handleConfigModal(interaction: ModalSubmitInteraction<'cached'>): Promise<void> {
+  const parsed = parseConfigId(interaction.customId);
+  if (!parsed || parsed.action !== 'welcomemodal') return;
+  if (!(await requireTier(interaction, 'admin'))) return;
+
+  const message = interaction.fields.getTextInputValue('message').trim();
+  const config = await updateGuildConfig(interaction.guildId, setOrUnset('welcome.message', message || undefined));
+  const panel = renderConfigPanel(config, interaction.guild.name, parsed.view);
+  if (interaction.isFromMessage()) await interaction.update(panel);
+  else await interaction.reply({ ...panel, flags: panel.flags | MessageFlags.Ephemeral });
+  await log(interaction.guild, 'server.config', {
+    subject: subjectOf(interaction.member),
+    body: message ? `Welcome message updated:\n${quote(message, 1400)}` : 'Welcome message reset to the default',
+  });
 }

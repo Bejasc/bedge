@@ -31,6 +31,11 @@ const GuildConfigSchemaMongoose = new Schema<GuildConfigDocument>(
       modRoleId: { type: String },
       adminRoleId: { type: String },
     },
+    welcome: {
+      enabled: { type: Boolean, default: false },
+      channelId: { type: String },
+      message: { type: String },
+    },
   },
   { timestamps: true },
 );

@@ -12,6 +12,7 @@ function toData(doc: InstanceType<typeof GuildConfigModel>): GuildConfigData {
     defaultLogChannelId: obj.defaultLogChannelId ?? undefined,
     logs: obj.logs,
     roles: obj.roles ?? {},
+    welcome: obj.welcome ?? { enabled: false },
   };
 }
 

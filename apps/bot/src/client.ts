@@ -21,6 +21,9 @@ export const client = new SapphireClient({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.AutoModerationExecution,
   ],
   partials: [Partials.Message, Partials.Channel, Partials.GuildMember],
   logger: {

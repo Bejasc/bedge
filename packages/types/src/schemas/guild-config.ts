@@ -16,6 +16,13 @@ export const GuildRolesConfigSchema = z.object({
 });
 export type GuildRolesConfig = z.infer<typeof GuildRolesConfigSchema>;
 
+export const WelcomeConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  channelId: z.string().optional(),
+  message: z.string().max(1500).optional(),
+});
+export type WelcomeConfig = z.infer<typeof WelcomeConfigSchema>;
+
 export const GuildConfigSchema = z.object({
   guildId: z.string(),
   defaultLogChannelId: z.string().optional(),
@@ -27,6 +34,7 @@ export const GuildConfigSchema = z.object({
     server: LogCategoryConfigSchema,
   }),
   roles: GuildRolesConfigSchema,
+  welcome: WelcomeConfigSchema,
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });
