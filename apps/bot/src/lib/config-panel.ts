@@ -14,8 +14,10 @@ import {
 import { LOG_CATEGORIES, type LogCategory } from '@bedge/types';
 import { BRAND_COLOUR, brandFooter } from './brand.js';
 import type { GuildConfigData } from './guild-config.js';
+import { DEFAULT_WELCOME } from './events/welcome.js';
+import { quote } from './events/format.js';
 
-export type ConfigSection = 'logging' | 'roles';
+export type ConfigSection = 'logging' | 'roles' | 'welcome';
 
 export interface ConfigView {
   section: ConfigSection;
@@ -32,7 +34,7 @@ export const CATEGORY_LABELS: Record<LogCategory, string> = {
   server: 'Server',
 };
 
-const SECTION_LABELS: Record<ConfigSection, string> = { logging: 'Logging', roles: 'Roles' };
+const SECTION_LABELS: Record<ConfigSection, string> = { logging: 'Logging', roles: 'Roles', welcome: 'Welcome' };
 
 export const LOG_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement] as const;
 
@@ -45,7 +47,7 @@ export function parseConfigId(customId: string): { action: string; view: ConfigV
   const [prefix, action, section, category] = customId.split(':');
   if (prefix !== 'cfg' || !action) return null;
   const view: ConfigView = {
-    section: section === 'roles' ? 'roles' : 'logging',
+    section: Object.hasOwn(SECTION_LABELS, section ?? '') ? (section as ConfigSection) : 'logging',
     category: (LOG_CATEGORIES as readonly string[]).includes(category) ? (category as LogCategory) : 'messages',
   };
   return { action, view };
@@ -143,6 +145,40 @@ function rolesSection(container: ContainerBuilder, config: GuildConfigData, view
   }
 }
 
+function welcomeSection(container: ContainerBuilder, config: GuildConfigData, view: ConfigView): void {
+  const { welcome } = config;
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `**Welcome messages:** ${welcome.enabled ? '✅ on' : '⛔ off'}`,
+        `**Channel:** ${channel(welcome.channelId)}`,
+        `**Message:**\n${quote(welcome.message?.trim() || DEFAULT_WELCOME, 1500)}`,
+        '-# Placeholders: `{user}` `{username}` `{server}` `{memberCount}`',
+      ].join('\n'),
+    ),
+  );
+  const select = new ChannelSelectMenuBuilder()
+    .setCustomId(configId('welcomechannel', view))
+    .setPlaceholder('Welcome channel')
+    .setChannelTypes(...LOG_CHANNEL_TYPES)
+    .setMinValues(0)
+    .setMaxValues(1);
+  if (welcome.channelId) select.setDefaultChannels(welcome.channelId);
+  container
+    .addActionRowComponents(new ActionRowBuilder<ChannelSelectMenuBuilder>().addComponents(select))
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(configId('welcometoggle', view))
+          .setStyle(welcome.enabled ? ButtonStyle.Secondary : ButtonStyle.Success)
+          .setLabel(welcome.enabled ? 'Disable welcomes' : 'Enable welcomes'),
+        new ButtonBuilder().setCustomId(configId('welcomeedit', view)).setStyle(ButtonStyle.Primary).setLabel('Edit message'),
+        new ButtonBuilder().setCustomId(configId('welcomepreview', view)).setStyle(ButtonStyle.Secondary).setLabel('Preview'),
+      ),
+    );
+}
+
+
 export function renderConfigPanel(config: GuildConfigData, guildName: string, view: ConfigView) {
   const container = new ContainerBuilder()
     .setAccentColor(BRAND_COLOUR)
@@ -151,7 +187,8 @@ export function renderConfigPanel(config: GuildConfigData, guildName: string, vi
     .addSeparatorComponents(new SeparatorBuilder());
 
   if (view.section === 'logging') loggingSection(container, config, view);
-  else rolesSection(container, config, view);
+  else if (view.section === 'roles') rolesSection(container, config, view);
+  else welcomeSection(container, config, view);
 
   container
     .addSeparatorComponents(new SeparatorBuilder())
