@@ -29,6 +29,7 @@
 
 ## Completed
 
+- [Plan 010 — Games, Reputation and Leaderboards](docs/plans/completed/community/2026-10-22-010-games-reputation-and-leaderboards.md) — coin flip, high/low, dice (roll, vs bot, duels) with per-game stats, opt-in points and daily rep, per-server daily limits, `/leaderboard` and `/stats`
 - [Plan 009 — Starboard](docs/plans/completed/community/2026-10-22-009-starboard.md) — reaction-driven starboard with configurable channel, emoji, threshold and self-star rule, set from `/config`
 - [Plan 008 — Events and Reminders](docs/plans/completed/moderation/2026-10-22-008-events-and-reminders.md) — `/event` cards with title, image, time and description, RSVP buttons, and per-event reminders into chosen channels via the TaskManager
 - [Plan 007 — Embed Builder](docs/plans/completed/moderation/2026-10-22-007-embed-builder.md) — Discord-styled builder page served by `apps/api` (now ESM), draft codes with a 7-day TTL, `/post code:` with *Update original*, *Open in builder* context menu

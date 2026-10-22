@@ -33,6 +33,20 @@ export const StarboardConfigSchema = z.object({
 });
 export type StarboardConfig = z.infer<typeof StarboardConfigSchema>;
 
+export const BotGameSchema = z.enum(['coinflip', 'highlow', 'dice']);
+export type BotGame = z.infer<typeof BotGameSchema>;
+
+export const GamesConfigSchema = z.object({
+  pointsEnabled: z.boolean().default(false),
+  /** Vs-bot plays per member per UTC day; 0 means unlimited. */
+  dailyLimits: z.object({
+    coinflip: z.number().int().min(0).default(0),
+    highlow: z.number().int().min(0).default(0),
+    dice: z.number().int().min(0).default(0),
+  }),
+});
+export type GamesConfig = z.infer<typeof GamesConfigSchema>;
+
 export const GuildConfigSchema = z.object({
   guildId: z.string(),
   defaultLogChannelId: z.string().optional(),
@@ -46,6 +60,7 @@ export const GuildConfigSchema = z.object({
   roles: GuildRolesConfigSchema,
   welcome: WelcomeConfigSchema,
   starboard: StarboardConfigSchema,
+  games: GamesConfigSchema,
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });

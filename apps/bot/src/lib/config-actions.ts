@@ -10,7 +10,7 @@ import {
 } from 'discord.js';
 import type { LogCategory } from '@bedge/types';
 import { getGuildConfig, updateGuildConfig, type GuildConfigData } from './guild-config.js';
-import { CATEGORY_LABELS, STAR_THRESHOLDS, configId, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
+import { CATEGORY_LABELS, DAILY_LIMIT_CHOICES, STAR_THRESHOLDS, configId, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
 import { displayEmoji, parseEmojiInput } from './starboard/logic.js';
 import { DEFAULT_WELCOME, WELCOME_MAX, renderWelcomeCard, renderWelcomeText } from './events/welcome.js';
 import { quote } from './events/format.js';
@@ -84,6 +84,21 @@ function changeFor(action: string, view: ConfigView, values: string[], config: G
       const threshold = Number(value);
       if (!STAR_THRESHOLDS.includes(threshold)) return null;
       return { update: { $set: { 'starboard.threshold': threshold } }, summary: `Starboard now needs ${threshold} star(s)` };
+    }
+    case 'pointstoggle': {
+      const enabled = !config.games.pointsEnabled;
+      return { update: { $set: { 'games.pointsEnabled': enabled } }, summary: `Points and rep ${enabled ? 'enabled' : 'disabled'}` };
+    }
+    case 'limit-coinflip':
+    case 'limit-highlow':
+    case 'limit-dice': {
+      const game = action.slice('limit-'.length);
+      const limit = Number(value);
+      if (!DAILY_LIMIT_CHOICES.includes(limit)) return null;
+      return {
+        update: { $set: { [`games.dailyLimits.${game}`]: limit } },
+        summary: `Daily ${game} plays vs the bot: ${limit === 0 ? 'unlimited' : limit}`,
+      };
     }
     case 'starself': {
       const selfStar = !config.starboard.selfStar;

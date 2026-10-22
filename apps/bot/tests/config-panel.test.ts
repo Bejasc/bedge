@@ -9,6 +9,7 @@ const base: GuildConfigData = {
   roles: {},
   welcome: { enabled: false },
   starboard: { enabled: false, emoji: '⭐', threshold: 3, selfStar: false },
+  games: { pointsEnabled: false, dailyLimits: { coinflip: 0, highlow: 0, dice: 0 } },
 };
 
 describe('config panel custom IDs', () => {
@@ -35,7 +36,7 @@ function countComponents(node: unknown): number {
 }
 
 describe('renderConfigPanel', () => {
-  it.each(['logging', 'roles', 'welcome', 'starboard'] as const)('renders the %s section within the 40-component limit', (section) => {
+  it.each(['logging', 'roles', 'welcome', 'starboard', 'games'] as const)('renders the %s section within the 40-component limit', (section) => {
     const json = renderConfigPanel(base, 'Test', { section, category: 'voice' }).components.map((c) => c.toJSON());
     expect(countComponents(json)).toBeLessThanOrEqual(40);
   });
