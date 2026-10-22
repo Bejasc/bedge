@@ -29,6 +29,7 @@
 
 ## Completed
 
+- [Plan 011 — Blackjack, Trivia and Slots](docs/plans/completed/community/2026-10-22-011-blackjack-trivia-and-slots.md) — blackjack vs the dealer, slots with a staged reveal, channel-wide trivia from Open Trivia DB, all on the shared stats, points, limits and leaderboards
 - [Plan 010 — Games, Reputation and Leaderboards](docs/plans/completed/community/2026-10-22-010-games-reputation-and-leaderboards.md) — coin flip, high/low, dice (roll, vs bot, duels) with per-game stats, opt-in points and daily rep, per-server daily limits, `/leaderboard` and `/stats`
 - [Plan 009 — Starboard](docs/plans/completed/community/2026-10-22-009-starboard.md) — reaction-driven starboard with configurable channel, emoji, threshold and self-star rule, set from `/config`
 - [Plan 008 — Events and Reminders](docs/plans/completed/moderation/2026-10-22-008-events-and-reminders.md) — `/event` cards with title, image, time and description, RSVP buttons, and per-event reminders into chosen channels via the TaskManager

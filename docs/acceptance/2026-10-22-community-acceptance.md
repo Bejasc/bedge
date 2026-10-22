@@ -1,6 +1,6 @@
 # Starboard and Games — Acceptance & Review
 
-> **What this is.** A guided review of the starboard (Plan 009) and the games, rep and leaderboards (Plan 010). One item per thing you can see or do; most take a minute or two.
+> **What this is.** A guided review of the starboard (Plan 009), the games, rep and leaderboards (Plan 010), and blackjack, slots and trivia (Plan 011). One item per thing you can see or do; most take a minute or two.
 >
 > **Scope note.** Built and unit-tested, and the games' database logic was checked against a throwaway MongoDB. Nothing has run in a live server yet. T1 covers what the tests prove.
 
@@ -37,6 +37,9 @@ Set each item's **Verdict** cell to a dot, with a short note after it if useful 
 | I8 | Points and rep | Test server | ⚫ |
 | I9 | Leaderboards and `/stats` | Test server | ⚫ |
 | I10 | README and feature docs | GitHub | ⚫ |
+| I11 | Blackjack | Test server | ⚫ |
+| I12 | Slots | Test server | ⚫ |
+| I13 | Trivia | Test server | ⚫ |
 | T1 | Starboard and game rules | Automated tests | ⚫ |
 
 ---
@@ -91,6 +94,20 @@ Use the test server from the Dyno-replacement guide, with your alt account. Rest
 **Steps:** `/leaderboard board:` each of Points, Rep, Coin flip, High/low and Dice. Then `/stats` and `/stats user:@alt`.
 **Expected:** Each board ranks correctly with medals for the top three, and marks you. `/stats` shows points, rep and every game's record.
 
+### I11 — Blackjack
+**Steps:** `/blackjack` a few times. Hit, stand and double down at least once each; try pressing your buttons from the alt.
+**Expected:** The dealer's second card stays hidden (`🂠`) until you stand. Soft hands read e.g. "17 (soft)". The dealer draws to 17. Double is only offered on two cards and takes exactly one more. The result line, colour and points match what happened, and the alt is told it isn't their hand.
+**This is a feel item** — does the table read clearly at a glance?
+
+### I12 — Slots
+**Steps:** `/slots` several times, with points on.
+**Expected:** The reels start as 🌀 and stop one at a time, then the result shows with the pay table underneath. Paying spins turn the card green (gold for a 7️⃣ jackpot) and add the payout to your points.
+**This is a feel item** — is the reveal satisfying, or too slow?
+
+### I13 — Trivia
+**Steps:** `/trivia category:Video Games`. Answer from your main account and the alt, one right and one wrong. Try answering twice, and try starting a second `/trivia` in the same channel.
+**Expected:** Each answer is confirmed privately and the card's answer count goes up. A second answer and a second question are refused. After 20 seconds the card reveals the correct button in green, the fastest correct answer with its time, and who was wrong; `/leaderboard board:Trivia` reflects it.
+
 ---
 
 ## Interactive checks — docs
@@ -105,8 +122,8 @@ Use the test server from the Dyno-replacement guide, with your alt account. Rest
 ## Verified by automated tests — review the design, not the pixels
 
 ### T1 — Starboard and game rules
-The tests cover emoji parsing (unicode and custom), star counting without bots or (optionally) the author, and the post/update/remove decisions. For games they cover dice notation and limits, card judging with ties as a push, streak tracking, the UTC daily allowance, the 24-hour rep cooldown, and leaderboard and profile rendering. Sign off that these are the rules you want; each plan's Decisions Log lists its assumed choices.
-(Source: `apps/bot/tests/starboard.test.ts`, `apps/bot/tests/games.test.ts`, `docs/plans/completed/community/`)
+The tests cover emoji parsing (unicode and custom), star counting without bots or (optionally) the author, and the post/update/remove decisions. For games they cover dice notation and limits, card judging with ties as a push, blackjack hand values, dealer play and settlement, slots odds and payouts, trivia parsing, shuffling and scoring, streak tracking, the UTC daily allowance, the 24-hour rep cooldown, and leaderboard and profile rendering. Sign off that these are the rules you want; each plan's Decisions Log lists its assumed choices.
+(Source: `apps/bot/tests/starboard.test.ts`, `apps/bot/tests/games.test.ts`, `apps/bot/tests/blackjack.test.ts`, `apps/bot/tests/slots.test.ts`, `apps/bot/tests/trivia.test.ts`, `docs/plans/completed/community/`)
 
 ---
 

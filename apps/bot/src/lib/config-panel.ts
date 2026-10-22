@@ -234,6 +234,9 @@ const BOT_GAMES = [
   { game: 'coinflip', label: 'Coin flip' },
   { game: 'highlow', label: 'High/low' },
   { game: 'dice', label: 'Dice vs bot' },
+  { game: 'blackjack', label: 'Blackjack' },
+  { game: 'slots', label: 'Slots' },
+  { game: 'trivia', label: 'Trivia questions' },
 ] as const;
 
 function gamesSection(container: ContainerBuilder, config: GuildConfigData, view: ConfigView): void {
@@ -243,7 +246,7 @@ function gamesSection(container: ContainerBuilder, config: GuildConfigData, view
     new TextDisplayBuilder().setContent(
       [
         `**Points and rep:** ${games.pointsEnabled ? '✅ on' : '⛔ off'}`,
-        `**Daily plays vs the bot:** ${BOT_GAMES.map((g) => `${g.label} ${limit(games.dailyLimits[g.game])}`).join(' · ')}`,
+        `**Daily plays per member:** ${BOT_GAMES.map((g) => `${g.label} ${limit(games.dailyLimits[g.game])}`).join(' · ')}`,
         '-# With points on: wins earn a point, a high/low cash-out earns its run, and `/rep` gives one a day.',
       ].join('\n'),
     ),
