@@ -5,6 +5,7 @@ import { client } from './client.js';
 import { connectDatabase } from '@bedge/database';
 import { taskManager } from './lib/task-manager.js';
 import { createUpdateTimeChannelsJob } from './jobs/update-time-channels.js';
+import { createEventRemindersJob } from './lib/guild-events/service.js';
 
 process.on('unhandledRejection', (reason) => {
   const error = reason instanceof Error ? reason : new Error(String(reason));
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
     await connectDatabase(config.mongoUri);
     container.logger.info('Database connected');
     taskManager.register('update-time-channels', config.timeChannelCron, createUpdateTimeChannelsJob(client));
+    taskManager.register('event-reminders', '* * * * *', createEventRemindersJob());
     await client.login(config.discordToken);
   } catch (error) {
     container.logger.fatal('Startup failed:', error instanceof Error ? error : new Error(String(error)));

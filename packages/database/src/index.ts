@@ -7,3 +7,4 @@ export { CounterModel, nextSequence } from './models/counter.js';
 export { PersonaModel, PostTemplateModel, type PersonaDocument, type PostTemplateDocument } from './models/posting.js';
 export { DraftModel, DRAFT_TTL_SECONDS, type DraftDocument } from './models/draft.js';
 export { CODE_ALPHABET, CODE_LENGTH, createDraft, findDraft, generateDraftCode, normaliseDraftCode, type DraftView } from './drafts.js';
+export { GuildEventModel, type GuildEventDocument } from './models/event.js';
