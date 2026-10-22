@@ -14,4 +14,5 @@ export const config = {
   builderUrl: process.env.BUILDER_URL?.replace(/\/+$/, '') || undefined,
   logLevel: process.env.LOG_LEVEL ?? 'info',
   timeChannelCron: process.env.TIME_CHANNEL_CRON ?? '*/15 * * * *',
+  defaultTimezone: process.env.DEFAULT_TIMEZONE || 'UTC',
 };

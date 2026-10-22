@@ -60,4 +60,8 @@ registerLogTypes([
 
   { key: 'post.create', category: 'server', emoji: '📣', title: 'Posted as bot', accentColour: COLOURS.teal },
   { key: 'post.edit', category: 'server', emoji: '✏️', title: 'Bot post edited', accentColour: COLOURS.teal },
+
+  { key: 'event.create', category: 'server', emoji: '📅', title: 'Event created', accentColour: COLOURS.blurple },
+  { key: 'event.update', category: 'server', emoji: '🗓️', title: 'Event updated', accentColour: COLOURS.blurple },
+  { key: 'event.cancel', category: 'server', emoji: '🚫', title: 'Event cancelled', accentColour: COLOURS.grey },
 ]);
