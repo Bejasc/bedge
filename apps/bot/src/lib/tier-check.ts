@@ -1,5 +1,5 @@
 import { MessageFlags, type BaseInteraction } from 'discord.js';
-import type { Command } from '@sapphire/framework';
+import { container, type Command } from '@sapphire/framework';
 import { config } from '../config.js';
 import { getGuildConfig } from './guild-config.js';
 import {
@@ -42,6 +42,16 @@ export async function tierOf(interaction: BaseInteraction): Promise<Tier> {
   if (!interaction.inGuild() || !interaction.member) return 'none';
   const guildConfig = await getGuildConfig(interaction.guildId);
   return resolveTier(tierSubjectFromMember(interaction.member), guildConfig.roles, config.ownerId);
+}
+
+/** The user's tier in another server, for buttons on admin-mirror logs that act on the source server. */
+export async function tierInGuild(userId: string, guildId: string): Promise<Tier> {
+  if (userId === config.ownerId) return 'owner';
+  const guild = container.client.guilds.cache.get(guildId);
+  const member = await guild?.members.fetch(userId).catch(() => null);
+  if (!member) return 'none';
+  const guildConfig = await getGuildConfig(guildId);
+  return resolveTier(tierSubjectFromMember(member), guildConfig.roles, config.ownerId);
 }
 
 /** Gate for component and modal handlers, which preconditions don't cover. Replies on denial. */

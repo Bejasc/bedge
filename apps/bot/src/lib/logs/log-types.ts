@@ -52,4 +52,9 @@ registerLogTypes([
   { key: 'mod.untimeout', category: 'moderation', emoji: '⌛', title: 'Timeout removed', accentColour: COLOURS.green },
   { key: 'mod.purge', category: 'moderation', emoji: '🧹', title: 'Messages purged', accentColour: COLOURS.orange },
   { key: 'automod.action', category: 'moderation', emoji: '🛡️', title: 'AutoMod triggered', accentColour: COLOURS.purple },
+
+  { key: 'case.note', category: 'moderation', emoji: '📝', title: 'Note added', accentColour: COLOURS.grey },
+  { key: 'case.warn', category: 'moderation', emoji: '⚠️', title: 'Member warned', accentColour: COLOURS.yellow },
+  { key: 'case.update', category: 'moderation', emoji: '✏️', title: 'Case updated', accentColour: COLOURS.blurple },
+  { key: 'case.delete', category: 'moderation', emoji: '🗑️', title: 'Case deleted', accentColour: COLOURS.grey },
 ]);

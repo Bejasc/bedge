@@ -3,6 +3,7 @@ import type { AutoModerationActionExecution } from 'discord.js';
 import { RecentKeys } from '../../lib/events/diffs.js';
 import { quote } from '../../lib/events/format.js';
 import { log } from '../../lib/logs/router.js';
+import { moderationButtons } from '../../lib/moderation/buttons.js';
 import { subjectOf } from '../../lib/logs/subject.js';
 import type { LogField } from '../../lib/logs/types.js';
 
@@ -30,6 +31,7 @@ export class AutoModerationActionExecutionLogListener extends Listener<typeof Ev
       subject: user ? subjectOf(user) : { id: execution.userId, label: execution.userId },
       body: execution.content ? quote(execution.content, 1200) : undefined,
       fields,
+      actions: moderationButtons(guild.id, execution.userId),
     });
   }
 }

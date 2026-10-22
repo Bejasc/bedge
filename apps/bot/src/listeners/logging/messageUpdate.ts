@@ -2,6 +2,7 @@ import { Events, Listener } from '@sapphire/framework';
 import type { Message, OmitPartialGroupDMChannel, PartialMessage } from 'discord.js';
 import { editBody, isRealEdit } from '../../lib/events/diffs.js';
 import { log } from '../../lib/logs/router.js';
+import { moderationButtons } from '../../lib/moderation/buttons.js';
 import { subjectOf } from '../../lib/logs/subject.js';
 
 type AnyMessage = OmitPartialGroupDMChannel<Message | PartialMessage>;
@@ -26,6 +27,7 @@ export class MessageUpdateLogListener extends Listener<typeof Events.MessageUpda
       body: editBody(snapshot.oldContent, snapshot.newContent),
       fields: [{ name: 'Channel', value: `<#${newMessage.channelId}>` }],
       links: [{ label: 'Jump to message', url: newMessage.url }],
+      actions: moderationButtons(newMessage.guildId, newMessage.author.id),
     });
   }
 }

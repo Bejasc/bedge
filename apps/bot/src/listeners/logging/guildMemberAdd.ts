@@ -5,6 +5,7 @@ import { resolveUsedInvite } from '../../lib/events/invite-tracker.js';
 import { renderWelcomeCard, renderWelcomeText } from '../../lib/events/welcome.js';
 import { getGuildConfig } from '../../lib/guild-config.js';
 import { log } from '../../lib/logs/router.js';
+import { moderationButtons } from '../../lib/moderation/buttons.js';
 import { subjectOf } from '../../lib/logs/subject.js';
 import type { LogField, LogLink } from '../../lib/logs/types.js';
 
@@ -46,6 +47,11 @@ export class GuildMemberAddLogListener extends Listener<typeof Events.GuildMembe
     ];
     const links: LogLink[] = welcome ? [{ label: 'Welcome message', url: welcome.url }] : [];
 
-    await log(member.guild, 'member.join', { subject: subjectOf(member), fields, links });
+    await log(member.guild, 'member.join', {
+      subject: subjectOf(member),
+      fields,
+      links,
+      actions: moderationButtons(member.guild.id, member.id),
+    });
   }
 }
