@@ -2,6 +2,7 @@
   "name": "api",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
@@ -11,9 +12,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@bedge/database": "workspace:*",
+    "@bedge/types": "workspace:*",
     "@nestjs/common": "^10.4.0",
     "@nestjs/core": "^10.4.0",
     "@nestjs/platform-express": "^10.4.0",
+    "dotenv": "^16.6.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

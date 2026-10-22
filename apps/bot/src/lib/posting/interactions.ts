@@ -13,16 +13,26 @@ export async function personaNames(guildId: string): Promise<string[]> {
   return personas.map((p) => p.name);
 }
 
+async function respondWithNames(interaction: AutocompleteInteraction, names: string[]): Promise<void> {
+  const query = interaction.options.getFocused().toLowerCase();
+  await interaction.respond(
+    names
+      .filter((n) => n.toLowerCase().includes(query))
+      .slice(0, 25)
+      .map((n) => ({ name: n, value: n })),
+  );
+}
+
 export async function templateAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
   if (!interaction.guildId) return interaction.respond([]);
-  const query = interaction.options.getFocused().toLowerCase();
   const templates = await PostTemplateModel.find({ guildId: interaction.guildId }).sort({ name: 1 }).limit(100);
-  await interaction.respond(
-    templates
-      .filter((t) => t.name.toLowerCase().includes(query))
-      .slice(0, 25)
-      .map((t) => ({ name: t.name, value: t.name })),
-  );
+  await respondWithNames(interaction, templates.map((t) => t.name));
+}
+
+export async function personaAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
+  if (!interaction.guildId) return interaction.respond([]);
+  const personas = await PersonaModel.find({ guildId: interaction.guildId }).sort({ name: 1 }).limit(100);
+  await respondWithNames(interaction, personas.map((p) => p.name));
 }
 
 function readFormat(interaction: ModalSubmitInteraction): PostFormat {

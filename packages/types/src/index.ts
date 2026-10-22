@@ -3,3 +3,4 @@ export * from './schemas/availability-config.js';
 export * from './schemas/guild-config.js';
 export * from './schemas/mod-case.js';
 export * from './schemas/posting.js';
+export * from './schemas/draft.js';
