@@ -23,6 +23,16 @@ export const WelcomeConfigSchema = z.object({
 });
 export type WelcomeConfig = z.infer<typeof WelcomeConfigSchema>;
 
+export const StarboardConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  channelId: z.string().optional(),
+  /** A unicode emoji, or a custom emoji's ID. */
+  emoji: z.string().default('⭐'),
+  threshold: z.number().int().min(1).max(50).default(3),
+  selfStar: z.boolean().default(false),
+});
+export type StarboardConfig = z.infer<typeof StarboardConfigSchema>;
+
 export const GuildConfigSchema = z.object({
   guildId: z.string(),
   defaultLogChannelId: z.string().optional(),
@@ -35,6 +45,7 @@ export const GuildConfigSchema = z.object({
   }),
   roles: GuildRolesConfigSchema,
   welcome: WelcomeConfigSchema,
+  starboard: StarboardConfigSchema,
   createdAt: z.string().datetime().optional(),
   updatedAt: z.string().datetime().optional(),
 });

@@ -16,8 +16,9 @@ import { BRAND_COLOUR, brandFooter } from './brand.js';
 import type { GuildConfigData } from './guild-config.js';
 import { DEFAULT_WELCOME } from './events/welcome.js';
 import { quote } from './events/format.js';
+import { displayEmoji } from './starboard/logic.js';
 
-export type ConfigSection = 'logging' | 'roles' | 'welcome';
+export type ConfigSection = 'logging' | 'roles' | 'welcome' | 'starboard';
 
 export interface ConfigView {
   section: ConfigSection;
@@ -34,7 +35,12 @@ export const CATEGORY_LABELS: Record<LogCategory, string> = {
   server: 'Server',
 };
 
-const SECTION_LABELS: Record<ConfigSection, string> = { logging: 'Logging', roles: 'Roles', welcome: 'Welcome' };
+const SECTION_LABELS: Record<ConfigSection, string> = {
+  logging: 'Logging',
+  roles: 'Roles',
+  welcome: 'Welcome',
+  starboard: 'Starboard',
+};
 
 export const LOG_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement] as const;
 
@@ -179,6 +185,49 @@ function welcomeSection(container: ContainerBuilder, config: GuildConfigData, vi
 }
 
 
+export const STAR_THRESHOLDS = [1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 20, 25];
+
+function starboardSection(container: ContainerBuilder, config: GuildConfigData, view: ConfigView): void {
+  const { starboard } = config;
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `**Starboard:** ${starboard.enabled ? '✅ on' : '⛔ off'}`,
+        `**Channel:** ${channel(starboard.channelId)}`,
+        `**Emoji:** ${displayEmoji(starboard.emoji)} · **Needs:** ${starboard.threshold} · **Self-stars:** ${starboard.selfStar ? 'count' : "don't count"}`,
+      ].join('\n'),
+    ),
+  );
+  const select = new ChannelSelectMenuBuilder()
+    .setCustomId(configId('starchannel', view))
+    .setPlaceholder('Starboard channel')
+    .setChannelTypes(...LOG_CHANNEL_TYPES)
+    .setMinValues(0)
+    .setMaxValues(1);
+  if (starboard.channelId) select.setDefaultChannels(starboard.channelId);
+  const threshold = new StringSelectMenuBuilder()
+    .setCustomId(configId('starthreshold', view))
+    .addOptions(
+      STAR_THRESHOLDS.map((n) => ({ label: `Post at ${n} star${n === 1 ? '' : 's'}`, value: String(n), default: n === starboard.threshold })),
+    );
+  container
+    .addActionRowComponents(new ActionRowBuilder<ChannelSelectMenuBuilder>().addComponents(select))
+    .addActionRowComponents(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(threshold))
+    .addActionRowComponents(
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(configId('startoggle', view))
+          .setStyle(starboard.enabled ? ButtonStyle.Secondary : ButtonStyle.Success)
+          .setLabel(starboard.enabled ? 'Disable starboard' : 'Enable starboard'),
+        new ButtonBuilder().setCustomId(configId('staremoji', view)).setStyle(ButtonStyle.Primary).setLabel('Set emoji'),
+        new ButtonBuilder()
+          .setCustomId(configId('starself', view))
+          .setStyle(ButtonStyle.Secondary)
+          .setLabel(starboard.selfStar ? "Don't count self-stars" : 'Count self-stars'),
+      ),
+    );
+}
+
 export function renderConfigPanel(config: GuildConfigData, guildName: string, view: ConfigView) {
   const container = new ContainerBuilder()
     .setAccentColor(BRAND_COLOUR)
@@ -188,7 +237,8 @@ export function renderConfigPanel(config: GuildConfigData, guildName: string, vi
 
   if (view.section === 'logging') loggingSection(container, config, view);
   else if (view.section === 'roles') rolesSection(container, config, view);
-  else welcomeSection(container, config, view);
+  else if (view.section === 'welcome') welcomeSection(container, config, view);
+  else starboardSection(container, config, view);
 
   container
     .addSeparatorComponents(new SeparatorBuilder())

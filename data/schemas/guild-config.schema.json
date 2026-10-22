@@ -133,6 +133,39 @@
       ],
       "additionalProperties": false
     },
+    "starboard": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "channelId": {
+          "type": "string"
+        },
+        "emoji": {
+          "default": "⭐",
+          "type": "string"
+        },
+        "threshold": {
+          "default": 3,
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "selfStar": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "enabled",
+        "emoji",
+        "threshold",
+        "selfStar"
+      ],
+      "additionalProperties": false
+    },
     "createdAt": {
       "type": "string",
       "format": "date-time",
@@ -148,7 +181,8 @@
     "guildId",
     "logs",
     "roles",
-    "welcome"
+    "welcome",
+    "starboard"
   ],
   "additionalProperties": false
 }

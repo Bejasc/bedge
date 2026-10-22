@@ -13,6 +13,7 @@ function toData(doc: InstanceType<typeof GuildConfigModel>): GuildConfigData {
     logs: obj.logs,
     roles: obj.roles ?? {},
     welcome: obj.welcome ?? { enabled: false },
+    starboard: obj.starboard ?? { enabled: false, emoji: '⭐', threshold: 3, selfStar: false },
   };
 }
 
