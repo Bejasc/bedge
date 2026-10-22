@@ -14,7 +14,7 @@ function toData(doc: InstanceType<typeof GuildConfigModel>): GuildConfigData {
     roles: obj.roles ?? {},
     welcome: obj.welcome ?? { enabled: false },
     starboard: obj.starboard ?? { enabled: false, emoji: '⭐', threshold: 3, selfStar: false },
-    games: obj.games ?? { pointsEnabled: false, dailyLimits: { coinflip: 0, highlow: 0, dice: 0 } },
+    games: obj.games ?? { pointsEnabled: false, dailyLimits: { coinflip: 0, highlow: 0, dice: 0, blackjack: 0, slots: 0, trivia: 0 } },
   };
 }
 

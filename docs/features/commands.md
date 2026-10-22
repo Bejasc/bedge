@@ -69,6 +69,9 @@ See [Games and leaderboards](games.md).
 | `/roll [dice]` | Everyone | Rolls dice like `2d6+1` |
 | `/dice bot [sides]` | Everyone | Roll against the bot |
 | `/dice duel opponent [sides]` | Everyone | Challenge a member |
+| `/blackjack` | Everyone | A hand of blackjack against the dealer |
+| `/slots` | Everyone | Spin the slot machine |
+| `/trivia [category] [difficulty]` | Everyone | Ask the channel a trivia question |
 | `/rep user` | Everyone | Gives a point of rep, once a day (points must be on) |
 | *Give rep* (member menu) | Everyone | Same as `/rep` |
 | `/leaderboard board` | Everyone | Top 10 for points, rep or a game |

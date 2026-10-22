@@ -9,7 +9,7 @@ const base: GuildConfigData = {
   roles: {},
   welcome: { enabled: false },
   starboard: { enabled: false, emoji: '⭐', threshold: 3, selfStar: false },
-  games: { pointsEnabled: false, dailyLimits: { coinflip: 0, highlow: 0, dice: 0 } },
+  games: { pointsEnabled: false, dailyLimits: { coinflip: 0, highlow: 0, dice: 0, blackjack: 0, slots: 0, trivia: 0 } },
 };
 
 describe('config panel custom IDs', () => {

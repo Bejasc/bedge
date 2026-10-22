@@ -12,7 +12,7 @@ interface Session<T> {
 }
 
 /** In-memory game state keyed by a short ID in the button custom IDs; it doesn't survive a restart, which is fine for games this short. */
-class SessionStore<T> {
+export class SessionStore<T> {
   private readonly sessions = new Map<string, Session<T>>();
 
   public create(data: T): string {

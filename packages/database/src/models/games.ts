@@ -11,7 +11,7 @@ const count = { type: Number, default: 0 };
 const GameStatsSchemaMongoose = new Schema<GameStatsDocument>({
   guildId: { type: String, required: true },
   userId: { type: String, required: true },
-  game: { type: String, enum: ['coinflip', 'highlow', 'dice'], required: true },
+  game: { type: String, enum: ['coinflip', 'highlow', 'dice', 'blackjack', 'slots', 'trivia'], required: true },
   plays: count,
   wins: count,
   losses: count,

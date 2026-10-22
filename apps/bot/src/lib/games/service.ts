@@ -3,7 +3,14 @@ import type { BotGame } from '@bedge/types';
 import { getGuildConfig } from '../guild-config.js';
 import { applyOutcome, dailyAllowance, repCooldown, utcDay, type Outcome, type StreakStats } from './logic.js';
 
-export const GAME_LABELS: Record<BotGame, string> = { coinflip: 'Coin flip', highlow: 'High/low', dice: 'Dice' };
+export const GAME_LABELS: Record<BotGame, string> = {
+  coinflip: 'Coin flip',
+  highlow: 'High/low',
+  dice: 'Dice',
+  blackjack: 'Blackjack',
+  slots: 'Slots',
+  trivia: 'Trivia',
+};
 
 export async function gamesConfig(guildId: string) {
   return (await getGuildConfig(guildId)).games;
@@ -79,6 +86,9 @@ export const BOARD_LABELS: Record<Board, { title: string; unit: string }> = {
   coinflip: { title: '🪙 Coin flip — wins', unit: 'wins' },
   highlow: { title: '🃏 High/low — best run', unit: 'in a row' },
   dice: { title: '🎲 Dice — wins', unit: 'wins' },
+  blackjack: { title: '🂡 Blackjack — wins', unit: 'wins' },
+  slots: { title: '🎰 Slots — wins', unit: 'wins' },
+  trivia: { title: '🧠 Trivia — correct answers', unit: 'correct' },
 };
 
 export async function leaderboard(guildId: string, board: Board, limit = 100): Promise<BoardRow[]> {

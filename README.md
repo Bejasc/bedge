@@ -14,7 +14,7 @@ It's built for the servers it runs in, not as a public bot. If you're here to us
 | Posting | Post as the bot or a webhook persona, edit bot messages in place, saved templates, and a browser-based embed builder | [Posting and the embed builder](docs/features/posting.md) |
 | Events | Event cards with RSVP buttons and reminders posted to chosen channels | [Events](docs/features/events.md) |
 | Starboard | Messages that collect enough stars are reposted to a highlights channel | [Starboard](docs/features/starboard.md) |
-| Games | Coin flip, high/low and dice with per-game stats, opt-in points, daily rep and leaderboards | [Games and leaderboards](docs/features/games.md) |
+| Games | Coin flip, high/low, dice, blackjack, slots and trivia, with per-game stats, opt-in points, daily rep and leaderboards | [Games and leaderboards](docs/features/games.md) |
 | Timezones | Voice-channel clocks for tracked members and an availability stoplight | [Commands](docs/features/commands.md#time-and-availability) |
 
 Every slash command and context menu, with the tier it needs, is listed in the [command reference](docs/features/commands.md). In Discord, `/help` shows the same list, filtered to what you can use.

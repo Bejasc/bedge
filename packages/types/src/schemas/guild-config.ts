@@ -33,16 +33,19 @@ export const StarboardConfigSchema = z.object({
 });
 export type StarboardConfig = z.infer<typeof StarboardConfigSchema>;
 
-export const BotGameSchema = z.enum(['coinflip', 'highlow', 'dice']);
+export const BotGameSchema = z.enum(['coinflip', 'highlow', 'dice', 'blackjack', 'slots', 'trivia']);
 export type BotGame = z.infer<typeof BotGameSchema>;
 
 export const GamesConfigSchema = z.object({
   pointsEnabled: z.boolean().default(false),
-  /** Vs-bot plays per member per UTC day; 0 means unlimited. */
+  /** Plays per member per UTC day (trivia: questions started); 0 means unlimited. */
   dailyLimits: z.object({
     coinflip: z.number().int().min(0).default(0),
     highlow: z.number().int().min(0).default(0),
     dice: z.number().int().min(0).default(0),
+    blackjack: z.number().int().min(0).default(0),
+    slots: z.number().int().min(0).default(0),
+    trivia: z.number().int().min(0).default(0),
   }),
 });
 export type GamesConfig = z.infer<typeof GamesConfigSchema>;

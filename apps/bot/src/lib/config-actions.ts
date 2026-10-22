@@ -91,13 +91,16 @@ function changeFor(action: string, view: ConfigView, values: string[], config: G
     }
     case 'limit-coinflip':
     case 'limit-highlow':
-    case 'limit-dice': {
+    case 'limit-dice':
+    case 'limit-blackjack':
+    case 'limit-slots':
+    case 'limit-trivia': {
       const game = action.slice('limit-'.length);
       const limit = Number(value);
       if (!DAILY_LIMIT_CHOICES.includes(limit)) return null;
       return {
         update: { $set: { [`games.dailyLimits.${game}`]: limit } },
-        summary: `Daily ${game} plays vs the bot: ${limit === 0 ? 'unlimited' : limit}`,
+        summary: `Daily ${game} plays per member: ${limit === 0 ? 'unlimited' : limit}`,
       };
     }
     case 'starself': {
