@@ -83,6 +83,33 @@
           }
         ]
       }
+    },
+    "override": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": [
+                "green",
+                "yellow",
+                "orange",
+                "red"
+              ]
+            },
+            "expiresAt": {}
+          },
+          "required": [
+            "level",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "required": [

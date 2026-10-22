@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { z } from 'zod';
 import { TimeTrackConfigSchema } from '../src/schemas/time-track-config.js';
 import { AvailabilityConfigSchema } from '../src/schemas/availability-config.js';
+import { GuildConfigSchema } from '../src/schemas/guild-config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -16,10 +17,14 @@ const targets: Array<{ schema: z.ZodTypeAny; path: string }> = [
     schema: AvailabilityConfigSchema,
     path: resolve(__dirname, '../../../data/schemas/availability-config.schema.json'),
   },
+  {
+    schema: GuildConfigSchema,
+    path: resolve(__dirname, '../../../data/schemas/guild-config.schema.json'),
+  },
 ];
 
 for (const { schema, path } of targets) {
-  const json = z.toJSONSchema(schema, { target: 'draft-7' });
+  const json = z.toJSONSchema(schema, { target: 'draft-7', unrepresentable: 'any' });
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, JSON.stringify(json, null, 2) + '\n', 'utf8');
   console.log(`Wrote ${path}`);
