@@ -22,7 +22,6 @@
 
 
 ### apps/bot — Dyno replacement roadmap (after Plan 003)
-- Moderation and cases — notes, warns, kick/ban/timeout as numbered cases, visible only in their own server and ghost-logged to the admin server; *Lookup*; action buttons on forwarded logs; user context menus (*Add note*, *Lookup*, *Moderate…*)
 - Posting toolkit — *Post as bot* (modal + channel select), webhook personas (saved name + avatar), *Edit bot message*, saved templates, Components V2 support, JSON posting
 - Embed builder (apps/api) — static Discord-styled preview page, draft codes for `/post code:…`, *Open in builder* message context menu
 - Events — title, image, time, description, RSVP; configurable reminder posts into chosen channels
@@ -34,6 +33,7 @@
 
 ## Completed
 
+- [Plan 005 — Moderation and Cases](docs/plans/completed/moderation/2026-10-22-005-moderation-and-cases.md) — numbered cases for notes, warns, timeouts, kicks and bans (including manual actions via the audit log); `/lookup`; user context menus; action buttons on logs and the admin mirror
 - [Plan 004 — Event Logging and Welcome Messages](docs/plans/completed/moderation/2026-10-22-004-event-logging-and-welcome-messages.md) — message, member, voice, invite, audit-log moderation and AutoMod logs; `/purge` with filters; configurable welcome cards
 - [Plan 003 — Server Config and Admin Hub](docs/plans/completed/moderation/2026-10-22-003-server-config-and-admin-hub.md) — discord.js 14.27, per-guild config with a `/config` panel, owner/admin/mod tiers, Components V2 log renderer and router with admin-server mirroring, auto-generated `/help`
 - [Plan 001 — Timezone Tracking](docs/plans/completed/bot/2026-05-03-001-timezone-tracking.md) — voice-channel time clocks per tracked member, stoplight availability system, reusable TaskManager scheduler

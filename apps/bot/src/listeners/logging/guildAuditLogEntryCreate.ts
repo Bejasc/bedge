@@ -1,11 +1,20 @@
 import { Events, Listener } from '@sapphire/framework';
 import type { Guild, GuildAuditLogsEntry } from 'discord.js';
-import { classifyAuditEntry, type AuditChange } from '../../lib/events/diffs.js';
-import { discordTime } from '../../lib/events/format.js';
-import { log } from '../../lib/logs/router.js';
-import { subjectOf } from '../../lib/logs/subject.js';
-import type { LogField } from '../../lib/logs/types.js';
+import type { ModCaseType } from '@bedge/types';
+import { classifyAuditEntry, type AuditChange, type ModLogKey } from '../../lib/events/diffs.js';
+import { logCase } from '../../lib/moderation/actions.js';
+import { createCase } from '../../lib/moderation/cases.js';
+import { consumePending } from '../../lib/moderation/pending.js';
 
+const CASE_TYPE: Record<ModLogKey, ModCaseType> = {
+  'mod.kick': 'kick',
+  'mod.ban': 'ban',
+  'mod.unban': 'unban',
+  'mod.timeout': 'timeout',
+  'mod.untimeout': 'untimeout',
+};
+
+/** Opens a case for kicks, bans and timeouts that bedge didn't perform itself (Discord's UI, other bots). */
 export class GuildAuditLogEntryCreateLogListener extends Listener<typeof Events.GuildAuditLogEntryCreate> {
   public constructor(context: Listener.LoaderContext) {
     super(context, { event: Events.GuildAuditLogEntryCreate });
@@ -14,17 +23,19 @@ export class GuildAuditLogEntryCreateLogListener extends Listener<typeof Events.
   public async run(entry: GuildAuditLogsEntry, guild: Guild): Promise<void> {
     const classified = classifyAuditEntry(entry.action, entry.changes as readonly AuditChange[]);
     if (!classified || !entry.targetId) return;
+    const type = CASE_TYPE[classified.key];
+    if (consumePending(guild.id, entry.targetId, type)) return;
 
     const target = await this.container.client.users.fetch(entry.targetId).catch(() => null);
-    const fields: LogField[] = [
-      { name: 'Moderator', value: entry.executorId ? `<@${entry.executorId}>` : 'Unknown' },
-      { name: 'Reason', value: entry.reason ?? '*No reason given*' },
-    ];
-    if (classified.until) fields.push({ name: 'Until', value: `${discordTime(classified.until)} (${discordTime(classified.until, 'R')})` });
-
-    await log(guild, classified.key, {
-      subject: target ? subjectOf(target) : { id: entry.targetId, label: entry.targetId },
-      fields,
+    const modCase = await createCase({
+      guildId: guild.id,
+      type,
+      targetId: entry.targetId,
+      moderatorId: entry.executorId ?? 'unknown',
+      reason: entry.reason ?? 'No reason given',
+      expiresAt: classified.until,
+      source: 'audit',
     });
+    await logCase(guild, modCase, target);
   }
 }

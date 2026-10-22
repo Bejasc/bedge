@@ -3,6 +3,7 @@ import type { Message, OmitPartialGroupDMChannel, PartialMessage } from 'discord
 import { UNCACHED } from '../../lib/events/diffs.js';
 import { discordTime, quote } from '../../lib/events/format.js';
 import { log } from '../../lib/logs/router.js';
+import { moderationButtons } from '../../lib/moderation/buttons.js';
 import { subjectOf } from '../../lib/logs/subject.js';
 import type { LogField } from '../../lib/logs/types.js';
 
@@ -29,6 +30,7 @@ export class MessageDeleteLogListener extends Listener<typeof Events.MessageDele
       body,
       fields,
       links: channel ? [{ label: 'Jump to context', url: channel.url }] : [],
+      actions: message.author ? moderationButtons(message.guild.id, message.author.id) : undefined,
     });
   }
 }
