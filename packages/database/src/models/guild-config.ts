@@ -43,6 +43,14 @@ const GuildConfigSchemaMongoose = new Schema<GuildConfigDocument>(
       threshold: { type: Number, default: 3 },
       selfStar: { type: Boolean, default: false },
     },
+    games: {
+      pointsEnabled: { type: Boolean, default: false },
+      dailyLimits: {
+        coinflip: { type: Number, default: 0 },
+        highlow: { type: Number, default: 0 },
+        dice: { type: Number, default: 0 },
+      },
+    },
   },
   { timestamps: true },
 );

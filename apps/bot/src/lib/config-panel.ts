@@ -18,7 +18,7 @@ import { DEFAULT_WELCOME } from './events/welcome.js';
 import { quote } from './events/format.js';
 import { displayEmoji } from './starboard/logic.js';
 
-export type ConfigSection = 'logging' | 'roles' | 'welcome' | 'starboard';
+export type ConfigSection = 'logging' | 'roles' | 'welcome' | 'starboard' | 'games';
 
 export interface ConfigView {
   section: ConfigSection;
@@ -40,6 +40,7 @@ const SECTION_LABELS: Record<ConfigSection, string> = {
   roles: 'Roles',
   welcome: 'Welcome',
   starboard: 'Starboard',
+  games: 'Games',
 };
 
 export const LOG_CHANNEL_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement] as const;
@@ -228,6 +229,50 @@ function starboardSection(container: ContainerBuilder, config: GuildConfigData, 
     );
 }
 
+export const DAILY_LIMIT_CHOICES = [0, 1, 3, 5, 10, 20, 50];
+const BOT_GAMES = [
+  { game: 'coinflip', label: 'Coin flip' },
+  { game: 'highlow', label: 'High/low' },
+  { game: 'dice', label: 'Dice vs bot' },
+] as const;
+
+function gamesSection(container: ContainerBuilder, config: GuildConfigData, view: ConfigView): void {
+  const { games } = config;
+  const limit = (n: number) => (n === 0 ? 'unlimited' : `${n}/day`);
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
+      [
+        `**Points and rep:** ${games.pointsEnabled ? '✅ on' : '⛔ off'}`,
+        `**Daily plays vs the bot:** ${BOT_GAMES.map((g) => `${g.label} ${limit(games.dailyLimits[g.game])}`).join(' · ')}`,
+        '-# With points on: wins earn a point, a high/low cash-out earns its run, and `/rep` gives one a day.',
+      ].join('\n'),
+    ),
+  );
+  for (const { game, label } of BOT_GAMES) {
+    container.addActionRowComponents(
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(configId(`limit-${game}`, view))
+          .addOptions(
+            DAILY_LIMIT_CHOICES.map((n) => ({
+              label: `${label}: ${n === 0 ? 'unlimited' : `${n} per day`}`,
+              value: String(n),
+              default: n === games.dailyLimits[game],
+            })),
+          ),
+      ),
+    );
+  }
+  container.addActionRowComponents(
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId(configId('pointstoggle', view))
+        .setStyle(games.pointsEnabled ? ButtonStyle.Secondary : ButtonStyle.Success)
+        .setLabel(games.pointsEnabled ? 'Turn points off' : 'Turn points on'),
+    ),
+  );
+}
+
 export function renderConfigPanel(config: GuildConfigData, guildName: string, view: ConfigView) {
   const container = new ContainerBuilder()
     .setAccentColor(BRAND_COLOUR)
@@ -238,7 +283,8 @@ export function renderConfigPanel(config: GuildConfigData, guildName: string, vi
   if (view.section === 'logging') loggingSection(container, config, view);
   else if (view.section === 'roles') rolesSection(container, config, view);
   else if (view.section === 'welcome') welcomeSection(container, config, view);
-  else starboardSection(container, config, view);
+  else if (view.section === 'starboard') starboardSection(container, config, view);
+  else gamesSection(container, config, view);
 
   container
     .addSeparatorComponents(new SeparatorBuilder())

@@ -6,3 +6,4 @@ export * from './schemas/posting.js';
 export * from './schemas/draft.js';
 export * from './schemas/event.js';
 export * from './schemas/starboard.js';
+export * from './schemas/games.js';

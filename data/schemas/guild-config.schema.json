@@ -166,6 +166,49 @@
       ],
       "additionalProperties": false
     },
+    "games": {
+      "type": "object",
+      "properties": {
+        "pointsEnabled": {
+          "default": false,
+          "type": "boolean"
+        },
+        "dailyLimits": {
+          "type": "object",
+          "properties": {
+            "coinflip": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "highlow": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            "dice": {
+              "default": 0,
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "coinflip",
+            "highlow",
+            "dice"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "pointsEnabled",
+        "dailyLimits"
+      ],
+      "additionalProperties": false
+    },
     "createdAt": {
       "type": "string",
       "format": "date-time",
@@ -182,7 +225,8 @@
     "logs",
     "roles",
     "welcome",
-    "starboard"
+    "starboard",
+    "games"
   ],
   "additionalProperties": false
 }

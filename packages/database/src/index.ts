@@ -9,3 +9,4 @@ export { DraftModel, DRAFT_TTL_SECONDS, type DraftDocument } from './models/draf
 export { CODE_ALPHABET, CODE_LENGTH, createDraft, findDraft, generateDraftCode, normaliseDraftCode, type DraftView } from './drafts.js';
 export { GuildEventModel, type GuildEventDocument } from './models/event.js';
 export { StarboardEntryModel, type StarboardEntryDocument } from './models/starboard.js';
+export { GameStatsModel, MemberPointsModel, type GameStatsDocument, type MemberPointsDocument } from './models/games.js';
