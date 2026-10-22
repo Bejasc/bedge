@@ -2,6 +2,7 @@ import { Command } from '@sapphire/framework';
 import { PersonaModel } from '@bedge/database';
 import { MessageFlags, type AutocompleteInteraction } from 'discord.js';
 import { log } from '../../lib/logs/router.js';
+import { personaAutocomplete } from '../../lib/posting/interactions.js';
 import { subjectOf } from '../../lib/logs/subject.js';
 import { defaultPermissionsFor, tiered } from '../../lib/tier-check.js';
 
@@ -37,11 +38,7 @@ export class PersonaCommand extends Command {
   }
 
   public override async autocompleteRun(interaction: AutocompleteInteraction): Promise<void> {
-    const query = interaction.options.getFocused().toLowerCase();
-    const personas = await PersonaModel.find({ guildId: interaction.guildId }).sort({ name: 1 }).limit(100);
-    await interaction.respond(
-      personas.filter((p) => p.name.toLowerCase().includes(query)).slice(0, 25).map((p) => ({ name: p.name, value: p.name })),
-    );
+    await personaAutocomplete(interaction);
   }
 
   public override async chatInputRun(interaction: Command.ChatInputCommandInteraction): Promise<void> {

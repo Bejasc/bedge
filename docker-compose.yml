@@ -13,6 +13,23 @@ services:
     networks:
       - bedge
 
+  api:
+    build:
+      context: .
+    working_dir: /app/apps/api
+    command: ["node", "dist/main.js"]
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/bedge
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - bedge
+
   mongo:
     image: mongo:7
     ports:

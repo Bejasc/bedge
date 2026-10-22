@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BedgeBot Builder</title>
+  <link rel="icon" href="bedgebot.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="bedgebot.png" alt=""><span>BedgeBot Builder</span></div>
+    <div class="topbar-actions">
+      <form id="load-form" class="load-form">
+        <input id="load-code" placeholder="Draft code" maxlength="8" autocomplete="off" spellcheck="false">
+        <button type="submit" class="btn ghost">Load</button>
+      </form>
+      <button id="save" class="btn primary">Save draft</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" hidden></div>
+
+  <main class="layout">
+    <section class="pane editor-pane" aria-label="Editor">
+      <div class="pane-head">
+        <h2>Message JSON</h2>
+        <div class="snippets" role="toolbar" aria-label="Insert">
+          <button data-snippet="text" class="chip">Text</button>
+          <button data-snippet="embed" class="chip">Embed</button>
+          <button data-snippet="card" class="chip">Card (V2)</button>
+          <button data-snippet="field" class="chip">+ Field</button>
+          <button data-snippet="link" class="chip">+ Link button</button>
+        </div>
+      </div>
+      <textarea id="json" spellcheck="false" autocomplete="off" aria-label="Message JSON"></textarea>
+      <div id="status" class="status" role="status"></div>
+      <details class="persona">
+        <summary>Preview as a persona</summary>
+        <label>Name <input id="persona-name" placeholder="BedgeBot"></label>
+        <label>Avatar URL <input id="persona-avatar" placeholder="https://…"></label>
+      </details>
+    </section>
+
+    <section class="pane preview-pane" aria-label="Preview">
+      <div class="pane-head"><h2># preview</h2></div>
+      <div id="preview" class="chat"></div>
+    </section>
+  </main>
+
+  <dialog id="saved">
+    <h2>Draft saved</h2>
+    <p>Your code:</p>
+    <div class="code-row"><code id="saved-code"></code><button id="copy" class="btn ghost">Copy</button></div>
+    <p class="hint" id="saved-hint"></p>
+    <p class="hint">Drafts expire after 7 days.</p>
+    <form method="dialog"><button class="btn primary">Done</button></form>
+  </dialog>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
