@@ -8,3 +8,4 @@ export { PersonaModel, PostTemplateModel, type PersonaDocument, type PostTemplat
 export { DraftModel, DRAFT_TTL_SECONDS, type DraftDocument } from './models/draft.js';
 export { CODE_ALPHABET, CODE_LENGTH, createDraft, findDraft, generateDraftCode, normaliseDraftCode, type DraftView } from './drafts.js';
 export { GuildEventModel, type GuildEventDocument } from './models/event.js';
+export { StarboardEntryModel, type StarboardEntryDocument } from './models/starboard.js';

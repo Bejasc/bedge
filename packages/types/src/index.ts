@@ -5,3 +5,4 @@ export * from './schemas/mod-case.js';
 export * from './schemas/posting.js';
 export * from './schemas/draft.js';
 export * from './schemas/event.js';
+export * from './schemas/starboard.js';

@@ -36,6 +36,13 @@ const GuildConfigSchemaMongoose = new Schema<GuildConfigDocument>(
       channelId: { type: String },
       message: { type: String },
     },
+    starboard: {
+      enabled: { type: Boolean, default: false },
+      channelId: { type: String },
+      emoji: { type: String, default: '⭐' },
+      threshold: { type: Number, default: 3 },
+      selfStar: { type: Boolean, default: false },
+    },
   },
   { timestamps: true },
 );

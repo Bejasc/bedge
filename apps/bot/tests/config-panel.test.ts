@@ -8,6 +8,7 @@ const base: GuildConfigData = {
   logs: { messages: enabled, members: enabled, moderation: enabled, voice: enabled, server: enabled },
   roles: {},
   welcome: { enabled: false },
+  starboard: { enabled: false, emoji: '⭐', threshold: 3, selfStar: false },
 };
 
 describe('config panel custom IDs', () => {
@@ -34,7 +35,7 @@ function countComponents(node: unknown): number {
 }
 
 describe('renderConfigPanel', () => {
-  it.each(['logging', 'roles', 'welcome'] as const)('renders the %s section within the 40-component limit', (section) => {
+  it.each(['logging', 'roles', 'welcome', 'starboard'] as const)('renders the %s section within the 40-component limit', (section) => {
     const json = renderConfigPanel(base, 'Test', { section, category: 'voice' }).components.map((c) => c.toJSON());
     expect(countComponents(json)).toBeLessThanOrEqual(40);
   });

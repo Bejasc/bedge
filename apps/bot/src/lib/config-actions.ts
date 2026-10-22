@@ -10,7 +10,8 @@ import {
 } from 'discord.js';
 import type { LogCategory } from '@bedge/types';
 import { getGuildConfig, updateGuildConfig, type GuildConfigData } from './guild-config.js';
-import { CATEGORY_LABELS, configId, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
+import { CATEGORY_LABELS, STAR_THRESHOLDS, configId, parseConfigId, renderConfigPanel, type ConfigView } from './config-panel.js';
+import { displayEmoji, parseEmojiInput } from './starboard/logic.js';
 import { DEFAULT_WELCOME, WELCOME_MAX, renderWelcomeCard, renderWelcomeText } from './events/welcome.js';
 import { quote } from './events/format.js';
 import { log } from './logs/router.js';
@@ -70,9 +71,49 @@ function changeFor(action: string, view: ConfigView, values: string[], config: G
         summary: `Welcome messages ${enabled ? 'enabled' : 'disabled'}`,
       };
     }
+    case 'starchannel':
+      return {
+        update: setOrUnset('starboard.channelId', value),
+        summary: value ? `Starboard channel set to <#${value}>` : 'Starboard channel cleared',
+      };
+    case 'startoggle': {
+      const enabled = !config.starboard.enabled;
+      return { update: { $set: { 'starboard.enabled': enabled } }, summary: `Starboard ${enabled ? 'enabled' : 'disabled'}` };
+    }
+    case 'starthreshold': {
+      const threshold = Number(value);
+      if (!STAR_THRESHOLDS.includes(threshold)) return null;
+      return { update: { $set: { 'starboard.threshold': threshold } }, summary: `Starboard now needs ${threshold} star(s)` };
+    }
+    case 'starself': {
+      const selfStar = !config.starboard.selfStar;
+      return {
+        update: { $set: { 'starboard.selfStar': selfStar } },
+        summary: `Self-stars ${selfStar ? 'now count' : 'no longer count'} on the starboard`,
+      };
+    }
     default:
       return null;
   }
+}
+
+function starEmojiModal(config: GuildConfigData, view: ConfigView): ModalBuilder {
+  return new ModalBuilder()
+    .setCustomId(configId('staremojimodal', view))
+    .setTitle('Starboard emoji')
+    .addLabelComponents(
+      new LabelBuilder()
+        .setLabel('Emoji')
+        .setDescription('A normal emoji like ⭐, or a custom one like <:name:123…> (type \\:name: in chat to get it)')
+        .setTextInputComponent(
+          new TextInputBuilder()
+            .setCustomId('emoji')
+            .setStyle(TextInputStyle.Short)
+            .setMaxLength(64)
+            .setRequired(true)
+            .setValue(/^\d+$/.test(config.starboard.emoji) ? `:${config.starboard.emoji}` : config.starboard.emoji),
+        ),
+    );
 }
 
 function nextView(action: string, view: ConfigView, values: string[]): ConfigView {
@@ -129,6 +170,10 @@ export async function handleConfigInteraction(interaction: PanelInteraction): Pr
     await sendPreview(interaction, config);
     return;
   }
+  if (action === 'staremoji') {
+    await interaction.showModal(starEmojiModal(config, view));
+    return;
+  }
 
   if (action === 'test') {
     const result = await log(interaction.guild, 'test', {
@@ -154,16 +199,29 @@ export async function handleConfigInteraction(interaction: PanelInteraction): Pr
 
 export async function handleConfigModal(interaction: ModalSubmitInteraction<'cached'>): Promise<void> {
   const parsed = parseConfigId(interaction.customId);
-  if (!parsed || parsed.action !== 'welcomemodal') return;
+  if (!parsed || (parsed.action !== 'welcomemodal' && parsed.action !== 'staremojimodal')) return;
   if (!(await requireTier(interaction, 'admin'))) return;
 
-  const message = interaction.fields.getTextInputValue('message').trim();
-  const config = await updateGuildConfig(interaction.guildId, setOrUnset('welcome.message', message || undefined));
+  let change: Change;
+  if (parsed.action === 'welcomemodal') {
+    const message = interaction.fields.getTextInputValue('message').trim();
+    change = {
+      update: setOrUnset('welcome.message', message || undefined),
+      summary: message ? `Welcome message updated:\n${quote(message, 1400)}` : 'Welcome message reset to the default',
+    };
+  } else {
+    const raw = interaction.fields.getTextInputValue('emoji');
+    const emoji = parseEmojiInput(raw.replace(/^:(\d+)$/, '$1'));
+    if (!emoji) {
+      await interaction.reply({ content: `❌ \`${raw}\` isn't an emoji I can use.`, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    change = { update: { $set: { 'starboard.emoji': emoji } }, summary: `Starboard emoji set to ${displayEmoji(emoji)}` };
+  }
+
+  const config = await updateGuildConfig(interaction.guildId, change.update);
   const panel = renderConfigPanel(config, interaction.guild.name, parsed.view);
   if (interaction.isFromMessage()) await interaction.update(panel);
   else await interaction.reply({ ...panel, flags: panel.flags | MessageFlags.Ephemeral });
-  await log(interaction.guild, 'server.config', {
-    subject: subjectOf(interaction.member),
-    body: message ? `Welcome message updated:\n${quote(message, 1400)}` : 'Welcome message reset to the default',
-  });
+  await log(interaction.guild, 'server.config', { subject: subjectOf(interaction.member), body: change.summary });
 }
