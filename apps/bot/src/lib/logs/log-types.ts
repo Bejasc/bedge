@@ -57,4 +57,7 @@ registerLogTypes([
   { key: 'case.warn', category: 'moderation', emoji: '⚠️', title: 'Member warned', accentColour: COLOURS.yellow },
   { key: 'case.update', category: 'moderation', emoji: '✏️', title: 'Case updated', accentColour: COLOURS.blurple },
   { key: 'case.delete', category: 'moderation', emoji: '🗑️', title: 'Case deleted', accentColour: COLOURS.grey },
+
+  { key: 'post.create', category: 'server', emoji: '📣', title: 'Posted as bot', accentColour: COLOURS.teal },
+  { key: 'post.edit', category: 'server', emoji: '✏️', title: 'Bot post edited', accentColour: COLOURS.teal },
 ]);
