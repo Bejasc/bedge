@@ -14,7 +14,7 @@ The bot reads `apps/bot/.env` locally. In production, `docker-compose.prod.yml` 
 | `OWNER_ID` | Yes | Your Discord user ID. The owner can do everything in every server |
 | `ADMIN_GUILD_ID` | No | The admin server that receives a copy of every log |
 | `ADMIN_LOG_CHANNEL_ID` | No | The channel in the admin server for those copies. Mirroring is off while either admin variable is unset |
-| `BUILDER_URL` | No | Public base URL of the API, e.g. `https://bedge.example.com`. Without it, *Open in builder* hands out bare draft codes |
+| `BUILDER_URL` | No | Public base URL of the API: `https://bot.bejasc.dev` in production, `http://localhost:3000` locally. Without it, *Open in builder* hands out bare draft codes |
 | `DEFAULT_TIMEZONE` | No | IANA zone for event times when the creator hasn't set one with `/time track`. Defaults to `UTC` |
 | `TIME_CHANNEL_CRON` | No | How often timezone clocks update. Defaults to every 15 minutes |
 | `LOG_*`, `DISCORD_WEBHOOK_*` | No | The ops logger; see [packages/logger](../../packages/logger/README.md) |
@@ -60,5 +60,4 @@ See [Configuration and tiers](configuration.md) for what each section does.
 
 `docker compose up` starts the API on port 3000 alongside the bot. The builder page is at `/builder/`. To use it from Discord, the API must be reachable from your browser, and `BUILDER_URL` must point at it.
 
-> [!NOTE] Production hosting
-> The production compose file and deploy workflow only cover the bot so far. Hosting the API publicly, behind a reverse proxy, is still a manual step.
+In production the API runs as its own container on `127.0.0.1:3010`, published at `https://bot.bejasc.dev` through Cloudflare and Apache. [DEPLOY.md](../../DEPLOY.md#embed-builder-at-botbejascdev) has the one-time DNS and Apache steps.
