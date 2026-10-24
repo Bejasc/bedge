@@ -1,86 +1,80 @@
 # bedge
 
-**bedge** is a personal integration platform. It pulls together the tools and services used day-to-day — GitHub, Todoist, Atlassian, Discord — and gives them a place to communicate with each other on your terms.
+**bedge** is a self-hosted Discord bot (BedgeBot) and companion web service that replaces Dyno across a handful of community servers, then adds the things Dyno never did well. One owner runs it; each server gets its own config, its own mod team and its own logs, and everything is mirrored to a central admin server so nothing happens out of sight.
 
-Two surfaces are active. A Discord bot manages server utilities: join/leave logs, moderation events, embeds, per-server configuration. A webhook relay API receives events from external services and emits human-readable updates to Discord — the kind you'd share in a team channel, not a stack trace. Both surfaces share a MongoDB persistence layer and a common library of schemas and models inside the same repo.
+It's built for the servers it runs in, not as a public bot. If you're here to use it in your own server, the [setup guide](docs/features/setup.md) covers what you need.
 
-The project is early. The bot is scaffolded and live. The API is stubbed. Integration work hasn't started yet.
+## What it does
 
----
+| Area | In short | Guide |
+|---|---|---|
+| Configuration | One `/config` panel per server: log channels, mod and admin roles, welcomes, starboard, games. Three permission tiers: owner, admin, mod | [Configuration and tiers](docs/features/configuration.md) |
+| Logging | Message edits and deletes, joins and leaves, roles and nicknames, voice, invites, moderation from the audit log, AutoMod. Every log is mirrored to the admin server | [Logging and welcomes](docs/features/logging.md) |
+| Moderation | Notes, warns, timeouts, kicks and bans as numbered cases, `/lookup`, `/purge`, and action buttons right on the logs | [Moderation and cases](docs/features/moderation.md) |
+| Posting | Post as the bot or a webhook persona, edit bot messages in place, saved templates, and a browser-based embed builder | [Posting and the embed builder](docs/features/posting.md) |
+| Events | Event cards with RSVP buttons and reminders posted to chosen channels | [Events](docs/features/events.md) |
+| Starboard | Messages that collect enough stars are reposted to a highlights channel | [Starboard](docs/features/starboard.md) |
+| Games | Coin flip, high/low, dice, blackjack, slots and trivia, with per-game stats, opt-in points, daily rep and leaderboards | [Games and leaderboards](docs/features/games.md) |
+| Timezones | Voice-channel clocks for tracked members and an availability stoplight | [Commands](docs/features/commands.md#time-and-availability) |
+
+Every slash command and context menu, with the tier it needs, is listed in the [command reference](docs/features/commands.md). In Discord, `/help` shows the same list, filtered to what you can use.
+
+All bot output uses Discord's Components V2 layout, styled after [drpg-logger](https://github.com/Bejasc/drpg-logger): an accent colour per kind of message, the subject's avatar, and a `BedgeBot` footer.
 
 ## Architecture
 
-TypeScript pnpm monorepo.
+A TypeScript pnpm monorepo with two apps and three shared packages, all on MongoDB.
 
 ```
 apps/
-  bot/        Discord bot — Sapphire.js + discord.js 14
-  api/        Webhook relay — NestJS (scaffold only)
+  bot/        Discord bot: Sapphire + discord.js 14 (Components V2)
+  api/        NestJS: the embed builder page and draft API
 packages/
-  types/      Zod v4 schemas and inferred types   (@bedge/types)
-  database/   Mongoose models and connection       (@bedge/database)
-  logger/     Console, file, and Discord webhook   (@bejasc/logger)
+  types/      Zod schemas and inferred types       (@bedge/types)
+  database/   Mongoose models and connection        (@bedge/database)
+  logger/     Console, file and Discord-webhook logger (@bejasc/logger)
 ```
 
-`apps/bot` is **ESM** (`"type": "module"`, NodeNext module resolution). `apps/api` and all packages are **CommonJS**. Every package extends `tsconfig.base.json` at the root.
+Everything is ESM (`"type": "module"`, NodeNext resolution) and extends `tsconfig.base.json`.
 
----
+## Running it
 
-## Getting started
-
-**Requires:** Node 20+, pnpm 9+, Docker (for the local MongoDB container).
+You need Node 20+, pnpm 9 or 10, and Docker for the local MongoDB container.
 
 ```bash
-cp .env.example apps/bot/.env   # fill in DISCORD_TOKEN, DISCORD_APPLICATION_ID, MONGODB_URI
+cp apps/bot/.env.example apps/bot/.env   # fill in the Discord token, application ID and OWNER_ID
 pnpm install
-pnpm dev
+pnpm dev                                 # local MongoDB + the bot in watch mode
 ```
 
-`pnpm dev` spins up a local MongoDB container via Docker before starting the bot in watch mode, and tears it down on exit. In production, replace `MONGODB_URI` with an Atlas connection string.
+`docker compose up` runs the bot, the API (on port 3000) and MongoDB together. The [setup guide](docs/features/setup.md) lists every environment variable, the Developer Portal settings and the permissions the bot needs.
 
-> [!IMPORTANT]
-> Enable **GuildMembers** and **MessageContent** privileged intents in the Discord Developer Portal before the bot will connect. Without them the client will be refused at login.
+> [!IMPORTANT] Privileged intents
+> Enable **Server Members** and **Message Content** for the application in the Discord Developer Portal. Without them Discord refuses the bot's login.
 
----
-
-## Commands
+## Development
 
 | Command | What it does |
-| --- | --- |
-| `pnpm dev` | Local MongoDB + bot in watch mode |
-| `pnpm build` | Compile all packages (tsc, recursive) |
+|---|---|
+| `pnpm dev` | Local MongoDB and the bot in watch mode |
+| `pnpm build` | Compile every package |
+| `pnpm test` | Run the bot and API test suites (Vitest) |
 | `pnpm start` | Run the compiled bot |
-| `pnpm generate:schema` | Generate JSON Schema files from Zod types |
-| `docker compose up` | Run the full stack in Docker |
-| `pnpm --filter bot ...` | Scope a command to the bot only |
-| `pnpm --filter api ...` | Scope a command to the API only |
+| `pnpm --filter api start` | Run the compiled API |
+| `pnpm generate:schema` | Regenerate JSON Schemas from the Zod types into `data/schemas/` |
 
----
+Tests live in `apps/<app>/tests/` and cover pure logic only; anything that needs Discord or MongoDB is checked by hand, guided by the acceptance guides in [docs/acceptance/](docs/acceptance/).
 
-## Logging
+Work is plan-driven: plans live in [docs/plans/](docs/plans/), indexed by [TODO.md](TODO.md).
 
-The logger lives at `packages/logger` as `@bejasc/logger` — a structured logger with console, file, and Discord webhook targets. The bot wires it in via a Sapphire `ILogger` adapter.
+## Docs
 
-Configuration is driven entirely by environment variables. Copy `.env.example` to see the full set. Defaults: console at `INFO`, file output to `./logs/bedge-bot.log`, Discord webhook disabled.
-
----
-
-## Schema generation
-
-Zod schemas live in `packages/types/src/schemas/`. After adding or changing a schema, run:
-
-```bash
-pnpm generate:schema
-```
-
-This writes `.schema.json` files to `data/schemas/` and those files are referenced in `.vscode/settings.json` so VS Code provides IntelliSense on any JSON data files that match. Commit the generated output alongside the schema change.
-
----
-
-## Roadmap
-
-Near-term work is tracked in [TODO.md](TODO.md). The broad shape:
-
-- **Bot** — join/leave and moderation logs, per-guild channel config, `/post-embed`, warn system
-- **API** — GitHub PR and push announcements, Todoist task events, Atlassian issue updates
-- **Platform** — shared guild config schema, `@bedge/database` model library, multi-surface routing config stored in MongoDB
+- [Setup](docs/features/setup.md): environment, Developer Portal and permissions
+- [Configuration and tiers](docs/features/configuration.md)
+- [Logging and welcomes](docs/features/logging.md)
+- [Moderation and cases](docs/features/moderation.md)
+- [Posting and the embed builder](docs/features/posting.md)
+- [Events](docs/features/events.md)
+- [Starboard](docs/features/starboard.md)
+- [Games and leaderboards](docs/features/games.md)
+- [Command reference](docs/features/commands.md)

@@ -1,3 +1,12 @@
 export { connectDatabase, disconnectDatabase } from './connection.js';
 export { TimeTrackConfigModel } from './models/time-track-config.js';
 export { AvailabilityConfigModel, type AvailabilityConfigDocument } from './models/availability-config.js';
+export { GuildConfigModel, type GuildConfigDocument } from './models/guild-config.js';
+export { ModCaseModel, type ModCaseDocument } from './models/mod-case.js';
+export { CounterModel, nextSequence } from './models/counter.js';
+export { PersonaModel, PostTemplateModel, type PersonaDocument, type PostTemplateDocument } from './models/posting.js';
+export { DraftModel, DRAFT_TTL_SECONDS, type DraftDocument } from './models/draft.js';
+export { CODE_ALPHABET, CODE_LENGTH, createDraft, findDraft, generateDraftCode, normaliseDraftCode, type DraftView } from './drafts.js';
+export { GuildEventModel, type GuildEventDocument } from './models/event.js';
+export { StarboardEntryModel, type StarboardEntryDocument } from './models/starboard.js';
+export { GameStatsModel, MemberPointsModel, type GameStatsDocument, type MemberPointsDocument } from './models/games.js';
