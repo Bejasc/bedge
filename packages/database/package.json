@@ -17,7 +17,7 @@
   },
   "dependencies": {
     "@bedge/types": "workspace:*",
-    "mongoose": "^8.5.2"
+    "mongoose": "^8.24.1"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
