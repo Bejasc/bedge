@@ -14,6 +14,27 @@ services:
         max-size: '10m'
         max-file: '3'
 
+  # Serves the embed builder at bot.bejasc.dev via Apache; bound to localhost so only the proxy can reach it.
+  api:
+    image: ghcr.io/bejasc/bedge-bot:latest
+    working_dir: /app/apps/api
+    command: ['node', 'dist/main.js']
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/bedge
+      PORT: 3000
+    ports:
+      - '127.0.0.1:3010:3000'
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - bedge
+    logging:
+      options:
+        max-size: '10m'
+        max-file: '3'
+
   mongo:
     image: mongo:7
     command: ['--quiet']

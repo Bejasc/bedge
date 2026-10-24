@@ -30,9 +30,12 @@ ghcr.io/bejasc/bedge-bot:<sha> + :latest
 VPS /opt/bedge-bot/
   └── docker-compose.yml      (copied from docker-compose.prod.yml each deploy)
 
-Two containers on the bedge Docker network:
-  ├── bot    ← your code, from GHCR
+Three containers on the bedge Docker network:
+  ├── bot    ← the Discord bot, from GHCR
+  ├── api    ← the embed builder and draft API (same image), on 127.0.0.1:3010
   └── mongo  ← mongo:7, data in named volume mongo-data
+
+Cloudflare (HTTPS) → Apache :80 (bot.bejasc.dev) → 127.0.0.1:3010 → api
 
 /etc/bedge-bot/bedge-bot.env  ← secrets (never in git, never in image)
 ```
@@ -54,14 +57,23 @@ The file `/etc/bedge-bot/bedge-bot.env` on the VPS must contain real values for 
 ```
 DISCORD_TOKEN=...
 DISCORD_APPLICATION_ID=...
+OWNER_ID=...
 
 # Must use the Docker network service name, not localhost
 MONGODB_URI=mongodb://mongo:27017/bedge
+
+# Admin hub (optional) and the public builder address
+ADMIN_GUILD_ID=...
+ADMIN_LOG_CHANNEL_ID=...
+BUILDER_URL=https://bot.bejasc.dev
+DEFAULT_TIMEZONE=Australia/Sydney
 
 LOG_CONSOLE_LEVEL=info
 LOG_FILE_ENABLED=true
 LOG_FILE_PATH=./logs/bedge-bot.log
 ```
+
+The `api` container doesn't read this file; its two settings are in `docker-compose.prod.yml`. [docs/features/setup.md](docs/features/setup.md) describes every variable.
 
 > [!IMPORTANT]
 > `MONGODB_URI` must be `mongodb://mongo:27017/bedge` — `mongo` is the Docker Compose service name and resolves on the internal network. `localhost` will not work inside the bot container.
@@ -87,6 +99,47 @@ See [`vps/plans/bedge-bot-docker-preflight.md`](../infra/vps/plans/bedge-bot-doc
 3. Create `/etc/bedge-bot/bedge-bot.env` with correct values (mode `640`, owner `root:deploy`)
 4. Add the three GitHub secrets above
 5. Make the GHCR package public after first push
+6. Publish the embed builder at `bot.bejasc.dev` (next section)
+
+## Embed builder at bot.bejasc.dev
+
+The `api` container listens only on `127.0.0.1:3010`. Apache gives it a public name, the same way `prototype.bejasc.dev` reaches the auth-gateway: Cloudflare terminates HTTPS and connects to Apache over HTTP on port 80.
+
+1. **Cloudflare DNS:** add an `A` record for `bot` pointing at the VPS IP, **proxied** (orange cloud).
+2. **Apache vhost:** create `/etc/apache2/sites-available/bedge-bot.conf`:
+
+   ```apache
+   <VirtualHost *:80>
+       ServerName bot.bejasc.dev
+
+       # Cloudflare terminates TLS and proxies to the origin over HTTP.
+
+       ErrorLog ${APACHE_LOG_DIR}/bedge-bot-error.log
+       CustomLog ${APACHE_LOG_DIR}/bedge-bot-access.log combined
+
+       ProxyRequests Off
+       ProxyPreserveHost On
+       ProxyPass        / http://127.0.0.1:3010/
+       ProxyPassReverse / http://127.0.0.1:3010/
+
+       RequestHeader set X-Forwarded-Proto "https"
+   </VirtualHost>
+   ```
+
+3. **Enable it:**
+
+   ```bash
+   sudo a2enmod proxy proxy_http headers   # already on if prototype.bejasc.dev works
+   sudo a2ensite bedge-bot
+   sudo apachectl configtest
+   sudo systemctl reload apache2
+   ```
+
+4. **Check it:** `curl -I http://127.0.0.1:3010/builder/` on the VPS should return `200`, and <https://bot.bejasc.dev/builder/> should load the builder in a browser.
+5. Set `BUILDER_URL=https://bot.bejasc.dev` in `/etc/bedge-bot/bedge-bot.env` and restart the bot (`docker compose up -d bot` in `/opt/bedge-bot`).
+
+> [!NOTE] The builder is public
+> Anyone can open the page and save drafts. The API rate-limits draft saves to 30 a minute per visitor, using Cloudflare's `CF-Connecting-IP` header, since every request reaches it from Apache on localhost. Drafts expire after 7 days.
 
 ## Rollback
 

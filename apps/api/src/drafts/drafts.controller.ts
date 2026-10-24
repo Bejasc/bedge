@@ -6,7 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Inject,
-  Ip,
+  Req,
   NotFoundException,
   Param,
   Post,
@@ -15,6 +15,17 @@ import type { DraftView } from '@bedge/database';
 import { DraftCreateSchema } from '@bedge/types';
 import { DraftsService } from './drafts.service.js';
 import { RateLimiter } from './rate-limit.js';
+
+export interface ClientRequest {
+  ip?: string;
+  headers: Record<string, string | string[] | undefined>;
+}
+
+/** Behind Cloudflare and Apache every request arrives from localhost, so the real client comes from Cloudflare's header. */
+export function clientKey(req: ClientRequest): string {
+  const forwarded = req.headers['cf-connecting-ip'];
+  return (Array.isArray(forwarded) ? forwarded[0] : forwarded) || req.ip || 'unknown';
+}
 
 export function parseDraftBody(body: unknown) {
   const parsed = DraftCreateSchema.safeParse(body);
@@ -30,8 +41,8 @@ export class DraftsController {
   public constructor(@Inject(DraftsService) private readonly drafts: DraftsService) {}
 
   @Post()
-  public async create(@Body() body: unknown, @Ip() ip: string): Promise<DraftView> {
-    if (!this.limiter.allow(ip)) throw new HttpException('Too many drafts — try again in a minute.', HttpStatus.TOO_MANY_REQUESTS);
+  public async create(@Body() body: unknown, @Req() req: ClientRequest): Promise<DraftView> {
+    if (!this.limiter.allow(clientKey(req))) throw new HttpException('Too many drafts — try again in a minute.', HttpStatus.TOO_MANY_REQUESTS);
     const parsed = parseDraftBody(body);
     if (!parsed.ok) throw new BadRequestException({ message: 'Invalid draft', issues: parsed.issues });
     return this.drafts.create(parsed.data);

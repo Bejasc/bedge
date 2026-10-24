@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CODE_ALPHABET, CODE_LENGTH, generateDraftCode, normaliseDraftCode } from '@bedge/database';
 import { RateLimiter } from '../src/drafts/rate-limit.js';
-import { parseDraftBody } from '../src/drafts/drafts.controller.js';
+import { clientKey, parseDraftBody } from '../src/drafts/drafts.controller.js';
 
 describe('generateDraftCode', () => {
   it('produces 8 characters from the unambiguous alphabet', () => {
@@ -55,5 +55,13 @@ describe('parseDraftBody', () => {
     expect(result.ok).toBe(false);
     expect(!result.ok && result.issues[0]).toMatch(/^payload\.content/);
     expect(parseDraftBody('nope').ok).toBe(false);
+  });
+});
+
+describe('clientKey', () => {
+  it('prefers the Cloudflare client header over the proxy address', () => {
+    expect(clientKey({ ip: '127.0.0.1', headers: { 'cf-connecting-ip': '203.0.113.7' } })).toBe('203.0.113.7');
+    expect(clientKey({ ip: '198.51.100.2', headers: {} })).toBe('198.51.100.2');
+    expect(clientKey({ headers: {} })).toBe('unknown');
   });
 });

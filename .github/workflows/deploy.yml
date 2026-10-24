@@ -66,11 +66,13 @@ jobs:
           sleep 5
           ssh -i ~/.ssh/deploy_key deploy@${{ secrets.VPS_HOST }} "
             cd /opt/bedge-bot
-            if ! docker compose ps bot | grep -qE 'running|Up'; then
-              echo 'FAIL: bedge-bot container is not running'
-              docker compose logs bot --tail 30
-              exit 1
-            fi
+            for service in bot api; do
+              if ! docker compose ps \$service | grep -qE 'running|Up'; then
+                echo \"FAIL: \$service container is not running\"
+                docker compose logs \$service --tail 30
+                exit 1
+              fi
+            done
           "
 
       - name: Notify Discord
