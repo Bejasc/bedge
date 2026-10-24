@@ -1,3 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# Dependency install scripts allowed to run; newer pnpm refuses unlisted ones.
+onlyBuiltDependencies:
+  - esbuild
+ignoredBuiltDependencies:
+  - '@nestjs/core'

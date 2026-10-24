@@ -2,6 +2,7 @@
   "name": "bedge-bot",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@10.34.7",
   "scripts": {
     "predev": "docker compose up mongo -d --wait",
     "dev": "pnpm --filter bot dev",
@@ -14,6 +15,6 @@
   },
   "engines": {
     "node": ">=20",
-    "pnpm": ">=9"
+    "pnpm": ">=10"
   }
 }
